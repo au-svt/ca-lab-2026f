@@ -41,7 +41,7 @@ async function refreshLiveBoard() {
     board.setAttribute('aria-busy', 'false');
     status.textContent = `Last checked ${formatDate(new Date().toISOString(), true)} · refreshes every 60 seconds`;
   } catch {
-    board.innerHTML = '<p>The live board could not be loaded. Use the “Open board separately” link below.</p>';
+    board.innerHTML = '<p>The live board could not be loaded. Please refresh the page or check again shortly.</p>';
     board.setAttribute('aria-busy', 'false');
     status.textContent = 'Live refresh is temporarily unavailable.';
   }
