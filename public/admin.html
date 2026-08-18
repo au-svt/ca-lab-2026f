@@ -2,27 +2,30 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Site administration · CS F342</title>
+  <title>Course-site administration · CS F342</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/styles.css" />
   <style>
-    .admin-shell{max-width:1000px;margin:auto;padding:70px 24px 100px}.admin-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:70px}.admin-top a{font-weight:800}.admin-shell h1{font-size:clamp(50px,8vw,92px);margin:0 0 24px}.admin-lead{font-size:18px;color:var(--muted);max-width:720px;line-height:1.65}.warning{margin:40px 0;background:#fff3b6;border:1px solid var(--ink);box-shadow:6px 6px 0 var(--ink);padding:22px;border-radius:12px;line-height:1.55}.steps{counter-reset:step;display:grid;gap:14px;margin-top:40px}.step{counter-increment:step;background:rgba(255,255,255,.32);border:1px solid var(--line);border-radius:18px;padding:26px;display:grid;grid-template-columns:50px 1fr;gap:20px}.step:before{content:counter(step);width:42px;height:42px;display:grid;place-items:center;border-radius:50%;background:var(--cobalt);color:white;font:500 14px 'DM Mono'}.step h2{font-size:21px;margin:0 0 8px}.step p,.step li{color:var(--muted);line-height:1.6;font-size:14px}.step code{background:var(--paper-deep);padding:3px 6px;border-radius:4px}.admin-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}.small{font-size:12px;color:var(--muted)}
+    .admin{max-width:900px;margin:auto;padding:48px 20px 90px}.admin-top{display:flex;justify-content:space-between;align-items:center;padding-bottom:28px;border-bottom:1px solid var(--line)}.admin-top a{color:var(--blue);font-size:14px}.admin h1{margin:64px 0 20px;font-size:clamp(48px,7vw,72px)}.lead{max-width:680px;color:var(--muted);font-size:18px}.live-action{margin:38px 0;padding:28px;background:var(--blue-soft);border-left:5px solid var(--blue);border-radius:8px}.live-action h2{font-family:var(--sans);font-size:24px}.live-action p{color:var(--muted)}.steps{display:grid;gap:14px;margin-top:40px;counter-reset:step}.step{display:grid;grid-template-columns:46px 1fr;gap:18px;padding:24px;border:1px solid var(--line);border-radius:9px;counter-increment:step}.step:before{content:counter(step);width:38px;height:38px;display:grid;place-items:center;color:white;background:var(--navy);border-radius:50%;font-size:13px;font-weight:700}.step h2{font-family:var(--sans);font-size:19px;margin:0 0 7px}.step p,.step li{color:var(--muted);font-size:14px}.step code{padding:2px 5px;background:var(--soft);border:1px solid var(--line);border-radius:4px}.warning{margin-top:30px;padding:20px;background:#fff8df;border:1px solid #e4d28d;border-radius:8px;color:#665a29;font-size:14px}
   </style>
 </head>
 <body>
-  <main class="admin-shell">
-    <div class="admin-top"><a class="brand" href="index.html"><span class="brand-mark"><i></i><i></i><i></i></span><span><b>CS F342</b><small>Site administration</small></span></a><a href="index.html">View site →</a></div>
-    <p class="eyebrow">Owner reference</p><h1>Publish with confidence.</h1>
-    <p class="admin-lead">This page is a guide, not a sign-in panel. Administration happens in the private GitHub repository, where only collaborators you approve can change course content.</p>
-    <div class="warning"><strong>About restricted files:</strong> “Draft” and “scheduled” keep files off the deployed website, but a public source repository exposes every committed file. Use a private repository for unreleased sheets. GitHub Pages does not provide per-student login protection.</div>
+  <main class="admin">
+    <div class="admin-top"><strong>CS F342 · Site administration</strong><a href="index.html">View student site →</a></div>
+    <h1>Course-site administration</h1>
+    <p class="lead">Use the live board during a lab. Use the repository for permanent announcements, schedules, and released lab sheets.</p>
+    <section class="live-action">
+      <h2>Post something right now</h2>
+      <p>Edit the Live Lab Board to add text or links. Drag a PDF, PPT, image, or other file into the editor to attach it. The student site checks for changes every minute.</p>
+      <a class="button button-primary" href="https://github.com/au-svt/ca-lab-2026f/issues/1" target="_blank" rel="noopener">Edit Live Lab Board ↗</a>
+    </section>
     <div class="steps">
-      <article class="step"><div><h2>Post an announcement</h2><p>Edit <code>content/content.json</code>, add an object under <code>announcements</code>, and set <code>visibility</code> to <code>public</code>. Commit to <code>main</code>; deployment runs automatically.</p></div></article>
-      <article class="step"><div><h2>Upload a lab sheet</h2><p>Upload the PDF into <code>source-materials/</code>. Add its exact filename to the lab’s <code>file</code> field, for example <code>lab-01-introduction.pdf</code>. The build publishes it as a download.</p></div></article>
-      <article class="step"><div><h2>Control visibility</h2><ul><li><code>public</code>: included in the next deployment.</li><li><code>draft</code>: visible only in the repository.</li><li><code>scheduled</code>: published after <code>releaseAt</code> when the scheduled deployment runs.</li></ul></div></article>
-      <article class="step"><div><h2>Update course details</h2><p>The same content file controls section schedule, policies, instructor details, and the “last updated” date. No HTML editing is needed for routine updates.</p></div></article>
+      <article class="step"><div><h2>Post a permanent announcement</h2><p>Edit <code>content/content.json</code>, add an item under <code>announcements</code>, set its visibility to <code>public</code>, and commit to <code>main</code>.</p></div></article>
+      <article class="step"><div><h2>Publish a permanent lab sheet</h2><p>Upload the PDF into <code>source-materials/</code>, add its exact filename to the relevant lab entry, and set visibility to <code>public</code>.</p></div></article>
+      <article class="step"><div><h2>Schedule or hide content</h2><p>Use <code>scheduled</code> with a future <code>releaseAt</code> time, or use <code>draft</code> to keep an item out of the deployed website.</p></div></article>
     </div>
-    <p class="small">Keep this URL unlinked from the student navigation if preferred. Security comes from GitHub repository permissions—not from hiding this page.</p>
+    <div class="warning"><strong>Public means public:</strong> anyone can download a file once it is published. A public repository also exposes files committed to it, even when the website marks them as drafts.</div>
   </main>
 </body>
 </html>

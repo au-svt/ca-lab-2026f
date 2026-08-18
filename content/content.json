@@ -11,8 +11,8 @@
   },
   "hero": {
     "eyebrow": "P4 + P7 · First Semester 2026–2027",
-    "heading": "Build it. Measure it. Understand it.",
-    "intro": "Your home for lab sheets, announcements, schedules, and the practical details you need for CS F342."
+    "heading": "Computer Architecture Lab",
+    "intro": "The official course page for lab sheets, announcements, schedules, and resources shared during class."
   },
   "quickLinks": [
     { "label": "Lab sheets", "target": "#lab-sheets" },

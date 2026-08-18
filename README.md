@@ -23,6 +23,12 @@ To publish a PDF:
 
 The build includes only public/released items in `dist`. GitHub Actions also runs daily at 07:45 IST so scheduled items can appear without a new commit.
 
+## Live Lab Board
+
+Issue [#1](https://github.com/au-svt/ca-lab-2026f/issues/1) is the live classroom board. Edit its body to post text or links, or drag files into the GitHub editor to attach them. The student homepage reads the rendered issue and checks for updates every 60 seconds; no site deployment is needed.
+
+Use the live board for temporary in-class material. Use `content/content.json` and `source-materials/` for permanent course material.
+
 ## Deploy to GitHub Pages
 
 1. Create a GitHub repository and push this project to its `main` branch.
