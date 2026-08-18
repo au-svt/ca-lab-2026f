@@ -1,4 +1,4 @@
-const state = { content: null, filter: 'all' };
+const state = { content: null };
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const escapeHtml = (value = '') => String(value).replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
@@ -10,11 +10,12 @@ function formatDate(value, withTime = false) {
 }
 
 function renderLabs() {
-  const labs = state.content.labs.filter(lab => state.filter === 'all' || lab.sections.includes(state.filter));
+  const labs = state.content.labs;
   $('[data-labs]').innerHTML = labs.length ? labs.map(lab => {
     const available = Boolean(lab.file && lab.available);
-    return `<article class="lab-row"><div class="lab-number">${String(lab.number).padStart(2, '0')}</div><div class="lab-copy"><h3>${escapeHtml(lab.title)}</h3><p>${escapeHtml(lab.summary)}</p></div><div class="section-tags">${lab.sections.map(section => `<span class="section-tag">${escapeHtml(section)}</span>`).join('')}</div>${available ? `<a class="download" href="${encodeURI(lab.file)}" download>Download PDF ↓</a>` : '<span class="download" aria-disabled="true">Not released</span>'}</article>`;
-  }).join('') : '<div class="empty-state">No lab sheets match this section.</div>';
+    const actions = available ? `<div class="file-actions"><a class="button button-secondary" href="${encodeURI(lab.file)}" target="_blank" rel="noopener">View PDF ↗</a><a class="button button-primary" href="${encodeURI(lab.file)}" download>Download</a></div>` : '<span class="download" aria-disabled="true">Not released</span>';
+    return `<article class="lab-row"><div class="lab-number">${String(lab.number).padStart(2, '0')}</div><div class="lab-copy"><h3>${escapeHtml(lab.title)}</h3><p>${escapeHtml(lab.summary)}</p>${lab.fileSize ? `<span class="file-size">PDF · ${escapeHtml(lab.fileSize)}</span>` : ''}</div>${actions}</article>`;
+  }).join('') : '<div class="empty-state">No lab sheets have been released.</div>';
 }
 
 function render(content) {
@@ -22,12 +23,15 @@ function render(content) {
   document.title = `${content.course.code} · ${content.course.title}`;
   $('[data-hero-eyebrow]').textContent = content.hero.eyebrow;
   $('[data-hero-intro]').textContent = content.hero.intro;
+  $('[data-instructor]').textContent = content.course.instructor;
+  $('[data-instructor-email]').textContent = content.course.email;
+  $('[data-instructor-email]').href = `mailto:${content.course.email}`;
   $('[data-updated]').textContent = formatDate(content.updatedAt);
-  $('[data-resources]').innerHTML = (content.resources || []).map(item => `<article class="resource-card"><div class="resource-icon" aria-hidden="true">PDF</div><div><span class="resource-label">COURSE RESOURCE</span><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.summary)}</p></div>${item.available ? `<a class="button button-primary" href="${encodeURI(item.file)}" download>Download PDF</a>` : '<span class="download" aria-disabled="true">Not available</span>'}</article>`).join('');
+  $('[data-resources]').innerHTML = (content.resources || []).map(item => `<article class="resource-card"><div class="resource-icon" aria-hidden="true">PDF</div><div><span class="resource-label">COURSE RESOURCE</span><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.summary)}</p>${item.fileSize ? `<span class="file-size">PDF · ${escapeHtml(item.fileSize)}</span>` : ''}</div>${item.available ? `<div class="file-actions"><a class="button button-secondary" href="${encodeURI(item.file)}" target="_blank" rel="noopener">View PDF ↗</a><a class="button button-primary" href="${encodeURI(item.file)}" download>Download</a></div>` : '<span class="download" aria-disabled="true">Not available</span>'}</article>`).join('');
   renderLabs();
   $('[data-announcements]').innerHTML = content.announcements.map(item => `<article class="announcement ${escapeHtml(item.level)}"><time class="announcement-date" datetime="${escapeHtml(item.date)}">${formatDate(item.date)}</time><div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.body)}</p></div><span class="audience">${escapeHtml(item.audience)}</span></article>`).join('') || '<div class="empty-state">No announcements right now.</div>';
-  $('[data-schedule]').innerHTML = content.schedule.map(item => `<article class="schedule-card"><h3>Section ${escapeHtml(item.section)}</h3><div class="schedule-details"><div><span>DAY & TIME</span><strong>${escapeHtml(item.day)} · ${escapeHtml(item.time)}</strong></div><div><span>VENUE</span><strong>${escapeHtml(item.venue)}</strong></div></div></article>`).join('');
-  $('[data-policies]').innerHTML = content.policies.map(item => `<article class="policy"><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.text)}</p></article>`).join('');
+  $('[data-schedule]').innerHTML = content.schedule.map(item => `<article class="schedule-card"><h3>Section ${escapeHtml(item.section)}</h3><div class="schedule-details"><div><span>DAY & TIME</span><strong>${escapeHtml(item.day)} · ${escapeHtml(item.time)}</strong></div><div><span>ROOM</span><strong>${escapeHtml(item.venue)}</strong></div><div><span>LAB INSTRUCTOR</span><strong>${escapeHtml(content.course.instructor)}</strong></div><div class="wide"><span>TEACHING ASSISTANTS</span><strong>${(item.tas || []).map(escapeHtml).join(' · ')}</strong></div></div></article>`).join('');
+  $('[data-policies]').innerHTML = content.policies.map(item => `<article class="policy${item.strict ? ' strict' : ''}"><span class="policy-level">${item.strict ? 'STRICT RULE' : 'GUIDELINE'}</span><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.text)}</p></article>`).join('');
 }
 
 async function refreshLiveBoard() {
@@ -47,7 +51,6 @@ async function refreshLiveBoard() {
   }
 }
 
-$$('[data-filter]').forEach(button => button.addEventListener('click', () => { state.filter = button.dataset.filter; $$('[data-filter]').forEach(item => item.classList.toggle('is-active', item === button)); renderLabs(); }));
 const menuButton = $('[data-menu-button]');
 menuButton.addEventListener('click', () => { const open = $('[data-nav]').classList.toggle('open'); menuButton.setAttribute('aria-expanded', String(open)); });
 $$('[data-nav] a').forEach(link => link.addEventListener('click', () => { $('[data-nav]').classList.remove('open'); menuButton.setAttribute('aria-expanded', 'false'); }));
