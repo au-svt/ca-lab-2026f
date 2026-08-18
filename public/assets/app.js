@@ -23,6 +23,7 @@ function render(content) {
   $('[data-hero-eyebrow]').textContent = content.hero.eyebrow;
   $('[data-hero-intro]').textContent = content.hero.intro;
   $('[data-updated]').textContent = formatDate(content.updatedAt);
+  $('[data-resources]').innerHTML = (content.resources || []).map(item => `<article class="resource-card"><div class="resource-icon" aria-hidden="true">PDF</div><div><span class="resource-label">COURSE RESOURCE</span><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.summary)}</p></div>${item.available ? `<a class="button button-primary" href="${encodeURI(item.file)}" download>Download PDF</a>` : '<span class="download" aria-disabled="true">Not available</span>'}</article>`).join('');
   renderLabs();
   $('[data-announcements]').innerHTML = content.announcements.map(item => `<article class="announcement ${escapeHtml(item.level)}"><time class="announcement-date" datetime="${escapeHtml(item.date)}">${formatDate(item.date)}</time><div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.body)}</p></div><span class="audience">${escapeHtml(item.audience)}</span></article>`).join('') || '<div class="empty-state">No announcements right now.</div>';
   $('[data-schedule]').innerHTML = content.schedule.map(item => `<article class="schedule-card"><h3>Section ${escapeHtml(item.section)}</h3><div class="schedule-details"><div><span>DAY & TIME</span><strong>${escapeHtml(item.day)} · ${escapeHtml(item.time)}</strong></div><div><span>VENUE</span><strong>${escapeHtml(item.venue)}</strong></div></div></article>`).join('');

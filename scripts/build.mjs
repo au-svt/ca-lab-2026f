@@ -13,32 +13,39 @@ await cp(join(root, 'public'), join(root, 'dist'), { recursive: true, force: tru
 await mkdir(join(root, 'dist/data'), { recursive: true });
 await mkdir(join(root, 'dist/materials'), { recursive: true });
 
-const labs = [];
-for (const lab of source.labs.filter(isVisible)) {
-  const output = { ...lab, available: false };
-  if (lab.file) {
-    const inputPath = join(root, 'source-materials', lab.file);
-    try {
-      await stat(inputPath);
-      const outputPath = join(root, 'dist/materials', lab.file);
-      await mkdir(dirname(outputPath), { recursive: true });
-      await cp(inputPath, outputPath);
-      output.file = `materials/${lab.file}`;
-      output.available = true;
-    } catch {
-      console.warn(`Warning: ${lab.file} was listed but not found; showing “Coming soon”.`);
-      output.file = '';
+async function publishFiles(items) {
+  const published = [];
+  for (const item of (items || []).filter(isVisible)) {
+    const output = { ...item, available: false };
+    if (item.file) {
+      const inputPath = join(root, 'source-materials', item.file);
+      try {
+        await stat(inputPath);
+        const outputPath = join(root, 'dist/materials', item.file);
+        await mkdir(dirname(outputPath), { recursive: true });
+        await cp(inputPath, outputPath);
+        output.file = `materials/${item.file}`;
+        output.available = true;
+      } catch {
+        console.warn(`Warning: ${item.file} was listed but not found; showing “Coming soon”.`);
+        output.file = '';
+      }
     }
+    published.push(output);
   }
-  labs.push(output);
+  return published;
 }
+
+const labs = await publishFiles(source.labs);
+const resources = await publishFiles(source.resources);
 
 const deployed = {
   ...source,
   announcements: source.announcements.filter(isVisible),
+  resources,
   labs,
   buildTime: now.toISOString()
 };
 await writeFile(join(root, 'dist/data/content.json'), `${JSON.stringify(deployed, null, 2)}\n`);
 await writeFile(join(root, 'dist/.nojekyll'), '');
-console.log(`Built site with ${deployed.announcements.length} announcement(s) and ${labs.length} visible lab(s).`);
+console.log(`Built site with ${deployed.announcements.length} announcement(s), ${resources.length} resource(s), and ${labs.length} visible lab(s).`);

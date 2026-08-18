@@ -20,6 +20,17 @@
     { "label": "Lab schedule", "target": "#schedule" },
     { "label": "Course policies", "target": "#policies" }
   ],
+  "resources": [
+    {
+      "id": "general-lab-instructions",
+      "title": "General Lab Instructions",
+      "summary": "Lab setup, Icarus Verilog and GTKWave commands, test-bench conventions, backups, and common Verilog mistakes.",
+      "file": "general-lab-instructions.pdf",
+      "fileSize": "413 KB",
+      "releaseAt": "2026-08-18T00:00:00+05:30",
+      "visibility": "public"
+    }
+  ],
   "announcements": [
     {
       "id": "welcome-2026",

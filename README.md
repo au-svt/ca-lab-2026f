@@ -21,6 +21,8 @@ To publish a PDF:
 3. Set `visibility` to `public`, or use `scheduled` with a future ISO-8601 `releaseAt` value.
 4. Update `updatedAt` and commit to `main`.
 
+General course PDFs use the same fields under `resources` and appear above the numbered lab sheets.
+
 The build includes only public/released items in `dist`. GitHub Actions also runs daily at 07:45 IST so scheduled items can appear without a new commit.
 
 ## Live Lab Board
