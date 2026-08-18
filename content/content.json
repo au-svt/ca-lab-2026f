@@ -4,8 +4,8 @@
     "title": "Computer Architecture Lab",
     "term": "First Semester 2026–2027",
     "sections": ["P4", "P7"],
-    "instructor": "Course Instructor",
-    "email": "",
+    "instructor": "Aniket Upadhyay",
+    "email": "p20241007@pilani.bits-pilani.ac.in",
     "officeHours": "Shared by appointment",
     "timezone": "Asia/Kolkata"
   },
@@ -76,31 +76,34 @@
   "schedule": [
     {
       "section": "P4",
-      "day": "To be announced",
-      "time": "—",
-      "venue": "—",
-      "accent": "cobalt"
+      "day": "Tuesday",
+      "time": "2:00–4:00 PM",
+      "venue": "6013",
+      "tas": ["Parth Rasik Satra", "Bharat Bhatt"]
     },
     {
       "section": "P7",
-      "day": "To be announced",
-      "time": "—",
-      "venue": "—",
-      "accent": "coral"
+      "day": "Thursday",
+      "time": "2:00–4:00 PM",
+      "venue": "6013",
+      "tas": ["Parth Rasik Satra", "Jaival Talati"]
     }
   ],
   "policies": [
     {
-      "title": "Before the lab",
-      "text": "Read the current lab sheet, complete any pre-lab work, and bring the required files to your assigned session."
+      "title": "Attendance deadline",
+      "text": "You must report before 2:10 PM. Attendance will not be granted after 2:10 PM except in genuine cases accepted by the lab instructor.",
+      "strict": true
     },
     {
-      "title": "During the lab",
-      "text": "Work in your assigned section and follow the submission instructions given for that experiment."
+      "title": "No mobile phones",
+      "text": "Mobile phones must remain inside your bag throughout lab hours. They must not be on the desk, in your hand, or outside your bag.",
+      "strict": true
     },
     {
-      "title": "Getting help",
-      "text": "Raise questions during your session or use the instructor contact channel announced in class."
+      "title": "Come prepared",
+      "text": "Read the current lab sheet, complete any pre-lab work, and bring the required files to your assigned session.",
+      "strict": false
     }
   ],
   "updatedAt": "2026-08-18"
