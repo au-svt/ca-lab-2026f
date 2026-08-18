@@ -33,7 +33,7 @@ async function refreshLiveBoard() {
   const board = $('[data-live-board]');
   const status = $('[data-live-status]');
   try {
-    const response = await fetch('https://api.github.com/repos/au-svt/CompArch-Labs-CSF342-2026F/issues/1', { headers: { Accept: 'application/vnd.github.full+json' }, cache: 'no-store' });
+    const response = await fetch('https://api.github.com/repos/au-svt/ca-lab-2026f/issues/1', { headers: { Accept: 'application/vnd.github.full+json' }, cache: 'no-store' });
     if (!response.ok) throw new Error('Board unavailable');
     const issue = await response.json();
     board.innerHTML = issue.body_html || '<p>No live items have been posted.</p>';
