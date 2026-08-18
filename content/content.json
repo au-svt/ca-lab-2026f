@@ -1,0 +1,96 @@
+{
+  "course": {
+    "code": "CS F342",
+    "title": "Computer Architecture Lab",
+    "term": "First Semester 2026–2027",
+    "sections": ["P4", "P7"],
+    "instructor": "Course Instructor",
+    "email": "",
+    "officeHours": "Shared by appointment",
+    "timezone": "Asia/Kolkata"
+  },
+  "hero": {
+    "eyebrow": "P4 + P7 · First Semester 2026–2027",
+    "heading": "Build it. Measure it. Understand it.",
+    "intro": "Your home for lab sheets, announcements, schedules, and the practical details you need for CS F342."
+  },
+  "quickLinks": [
+    { "label": "Lab sheets", "target": "#lab-sheets" },
+    { "label": "Announcements", "target": "#announcements" },
+    { "label": "Lab schedule", "target": "#schedule" },
+    { "label": "Course policies", "target": "#policies" }
+  ],
+  "announcements": [
+    {
+      "id": "welcome-2026",
+      "title": "Welcome to CS F342 Lab",
+      "body": "This portal is the official home for P4 and P7 lab material. Bookmark it and check the latest notice before each session.",
+      "date": "2026-08-18",
+      "audience": "P4 & P7",
+      "level": "important",
+      "visibility": "public"
+    },
+    {
+      "id": "first-sheet-pending",
+      "title": "Lab sheets will appear here",
+      "body": "Downloads will be published as they are released. A sheet marked ‘Coming soon’ is not yet available.",
+      "date": "2026-08-18",
+      "audience": "P4 & P7",
+      "level": "general",
+      "visibility": "public"
+    }
+  ],
+  "labs": [
+    {
+      "number": 1,
+      "title": "Lab sheet 1",
+      "summary": "The topic and PDF will be added before the first scheduled lab.",
+      "sections": ["P4", "P7"],
+      "file": "",
+      "fileSize": "",
+      "releaseAt": "2026-08-18T00:00:00+05:30",
+      "visibility": "public"
+    },
+    {
+      "number": 2,
+      "title": "Lab sheet 2",
+      "summary": "Details will be published after Lab 1.",
+      "sections": ["P4", "P7"],
+      "file": "",
+      "fileSize": "",
+      "releaseAt": "2026-09-01T08:00:00+05:30",
+      "visibility": "scheduled"
+    }
+  ],
+  "schedule": [
+    {
+      "section": "P4",
+      "day": "To be announced",
+      "time": "—",
+      "venue": "—",
+      "accent": "cobalt"
+    },
+    {
+      "section": "P7",
+      "day": "To be announced",
+      "time": "—",
+      "venue": "—",
+      "accent": "coral"
+    }
+  ],
+  "policies": [
+    {
+      "title": "Before the lab",
+      "text": "Read the current lab sheet, complete any pre-lab work, and bring the required files to your assigned session."
+    },
+    {
+      "title": "During the lab",
+      "text": "Work in your assigned section and follow the submission instructions given for that experiment."
+    },
+    {
+      "title": "Getting help",
+      "text": "Raise questions during your session or use the instructor contact channel announced in class."
+    }
+  ],
+  "updatedAt": "2026-08-18"
+}

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Site administration · CS F342</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/styles.css" />
+  <style>
+    .admin-shell{max-width:1000px;margin:auto;padding:70px 24px 100px}.admin-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:70px}.admin-top a{font-weight:800}.admin-shell h1{font-size:clamp(50px,8vw,92px);margin:0 0 24px}.admin-lead{font-size:18px;color:var(--muted);max-width:720px;line-height:1.65}.warning{margin:40px 0;background:#fff3b6;border:1px solid var(--ink);box-shadow:6px 6px 0 var(--ink);padding:22px;border-radius:12px;line-height:1.55}.steps{counter-reset:step;display:grid;gap:14px;margin-top:40px}.step{counter-increment:step;background:rgba(255,255,255,.32);border:1px solid var(--line);border-radius:18px;padding:26px;display:grid;grid-template-columns:50px 1fr;gap:20px}.step:before{content:counter(step);width:42px;height:42px;display:grid;place-items:center;border-radius:50%;background:var(--cobalt);color:white;font:500 14px 'DM Mono'}.step h2{font-size:21px;margin:0 0 8px}.step p,.step li{color:var(--muted);line-height:1.6;font-size:14px}.step code{background:var(--paper-deep);padding:3px 6px;border-radius:4px}.admin-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}.small{font-size:12px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <main class="admin-shell">
+    <div class="admin-top"><a class="brand" href="index.html"><span class="brand-mark"><i></i><i></i><i></i></span><span><b>CS F342</b><small>Site administration</small></span></a><a href="index.html">View site →</a></div>
+    <p class="eyebrow">Owner reference</p><h1>Publish with confidence.</h1>
+    <p class="admin-lead">This page is a guide, not a sign-in panel. Administration happens in the private GitHub repository, where only collaborators you approve can change course content.</p>
+    <div class="warning"><strong>About restricted files:</strong> “Draft” and “scheduled” keep files off the deployed website, but a public source repository exposes every committed file. Use a private repository for unreleased sheets. GitHub Pages does not provide per-student login protection.</div>
+    <div class="steps">
+      <article class="step"><div><h2>Post an announcement</h2><p>Edit <code>content/content.json</code>, add an object under <code>announcements</code>, and set <code>visibility</code> to <code>public</code>. Commit to <code>main</code>; deployment runs automatically.</p></div></article>
+      <article class="step"><div><h2>Upload a lab sheet</h2><p>Upload the PDF into <code>source-materials/</code>. Add its exact filename to the lab’s <code>file</code> field, for example <code>lab-01-introduction.pdf</code>. The build publishes it as a download.</p></div></article>
+      <article class="step"><div><h2>Control visibility</h2><ul><li><code>public</code>: included in the next deployment.</li><li><code>draft</code>: visible only in the repository.</li><li><code>scheduled</code>: published after <code>releaseAt</code> when the scheduled deployment runs.</li></ul></div></article>
+      <article class="step"><div><h2>Update course details</h2><p>The same content file controls section schedule, policies, instructor details, and the “last updated” date. No HTML editing is needed for routine updates.</p></div></article>
+    </div>
+    <p class="small">Keep this URL unlinked from the student navigation if preferred. Security comes from GitHub repository permissions—not from hiding this page.</p>
+  </main>
+</body>
+</html>
