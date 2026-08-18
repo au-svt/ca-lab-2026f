@@ -43,11 +43,11 @@
   "labs": [
     {
       "number": 1,
-      "title": "Lab sheet 1",
-      "summary": "The topic and PDF will be added before the first scheduled lab.",
+      "title": "Getting Started with Verilog",
+      "summary": "Icarus Simulator, Verilog primitives, modelling styles, and introductory HDL exercises.",
       "sections": ["P4", "P7"],
-      "file": "",
-      "fileSize": "",
+      "file": "lab-01-verilog.pdf",
+      "fileSize": "491 KB",
       "releaseAt": "2026-08-18T00:00:00+05:30",
       "visibility": "public"
     },
