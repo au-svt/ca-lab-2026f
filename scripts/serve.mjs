@@ -5,7 +5,7 @@ import { execFileSync } from 'node:child_process';
 
 execFileSync(process.execPath, ['scripts/build.mjs'], { stdio: 'inherit' });
 const root = join(process.cwd(), 'dist');
-const types = { '.html':'text/html; charset=utf-8', '.css':'text/css', '.js':'text/javascript', '.json':'application/json', '.pdf':'application/pdf', '.svg':'image/svg+xml' };
+const types = { '.html':'text/html; charset=utf-8', '.css':'text/css', '.js':'text/javascript', '.json':'application/json', '.pdf':'application/pdf', '.svg':'image/svg+xml', '.wasm':'application/wasm', '.png':'image/png' };
 const server = createServer(async (req, res) => {
   try {
     const urlPath = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);

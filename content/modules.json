@@ -26,6 +26,7 @@
             "caption": "Circuit diagram as given in Lab Sheet 2."
           },
           "code": "module mux4to1_gate(out,in,sel);\ninput [0:3] in;\ninput [0:1] sel;\noutput out;\nwire n1,n2,a1,a2,a3,a4;\n\nnot n(n1,sel[1]);\nnot nn(n2,sel[0]);\n\nand (a1,in[0],n1,n2);\nand (a2,in[1],n2,sel[1]);\nand (a3,in[2],sel[0],n1);\nand (a4,in[3],sel[0],sel[1]);\n\nor or1(out,a1,a2,a3,a4);\nendmodule",
+          "testbench": "module autograde_mux4to1;\nreg [0:3] in; reg [0:1] sel; wire out; reg expected; integer i, passed, failed;\nmux4to1_gate dut(out, in, sel);\ninitial begin\n  passed = 0; failed = 0;\n  for (i = 0; i < 64; i = i + 1) begin\n    in[0]=i[0]; in[1]=i[1]; in[2]=i[2]; in[3]=i[3]; sel[0]=i[4]; sel[1]=i[5];\n    if (sel[0]==0 && sel[1]==0) expected = in[0];\n    else if (sel[0]==0 && sel[1]==1) expected = in[1];\n    else if (sel[0]==1 && sel[1]==0) expected = in[2];\n    else expected = in[3];\n    #1;\n    if (out === expected) begin $display(\"TEST|MUX4TO1|%0d|PASS\", i); passed = passed + 1; end\n    else begin $display(\"TEST|MUX4TO1|%0d|FAIL|sel=%b|in=%b|expected=%b|got=%b\", i, sel, in, expected, out); failed = failed + 1; end\n  end\n  if (failed == 0) $display(\"RESULT|MUX4TO1|PASS|%0d/64\", passed); else $display(\"RESULT|MUX4TO1|FAIL|%0d/64\", passed);\n  $finish;\nend\nendmodule",
           "steps": [
             {
               "label": "Module shell — ports only",
@@ -55,7 +56,6 @@
           "summary": "Builds a 1-bit full adder from a 3-to-8 decoder: sum and carry are each an OR of the decoder's minterms.",
           "signature": "module FADDER(s, c, x, y, z);",
           "simulate": "decoder-fadder",
-          "playground": false,
           "inputs": [
             { "name": "x", "default": 0, "side": "left" },
             { "name": "y", "default": 0, "side": "left" },
@@ -69,7 +69,73 @@
             "image": "materials/diagrams/decoder-fadder-circuit.png",
             "caption": "1-bit full adder via decoder (Lab Sheet 2, Exercise 1), scaled to 8-bit and 32-bit adders."
           },
-          "code": "module DECODER(d0,d1,d2,d3,d4,d5,d6,d7,x,y,z);\ninput x,y,z;\noutput d0,d1,d2,d3,d4,d5,d6,d7;\nwire x0,y0,z0;\nnot n1(x0,x);\nnot n2(y0,y);\nnot n3(z0,z);\nand a0(d0,x0,y0,z0);\nand a1(d1,x0,y0,z);\nand a2(d2,x0,y,z0);\nand a3(d3,x0,y,z);\nand a4(d4,x,y0,z0);\nand a5(d5,x,y0,z);\nand a6(d6,x,y,z0);\nand a7(d7,x,y,z);\nendmodule\n\nmodule FADDER(s,c,x,y,z);\ninput x,y,z;\nwire d0,d1,d2,d3,d4,d5,d6,d7;\noutput s,c;\nDECODER dec(d0,d1,d2,d3,d4,d5,d6,d7,x,y,z);\nassign s = d1 | d2 | d4 | d7,\n       c = d3 | d5 | d6 | d7;\nendmodule"
+          "code": "module DECODER(d0,d1,d2,d3,d4,d5,d6,d7,x,y,z);\ninput x,y,z;\noutput d0,d1,d2,d3,d4,d5,d6,d7;\nwire x0,y0,z0;\nnot n1(x0,x);\nnot n2(y0,y);\nnot n3(z0,z);\nand a0(d0,x0,y0,z0);\nand a1(d1,x0,y0,z);\nand a2(d2,x0,y,z0);\nand a3(d3,x0,y,z);\nand a4(d4,x,y0,z0);\nand a5(d5,x,y0,z);\nand a6(d6,x,y,z0);\nand a7(d7,x,y,z);\nendmodule\n\nmodule FADDER(s,c,x,y,z);\ninput x,y,z;\nwire d0,d1,d2,d3,d4,d5,d6,d7;\noutput s,c;\nDECODER dec(d0,d1,d2,d3,d4,d5,d6,d7,x,y,z);\nassign s = d1 | d2 | d4 | d7,\n       c = d3 | d5 | d6 | d7;\nendmodule",
+          "testbench": "module autograde_fadder;\nreg x, y, z; wire s, c; reg expected_s; reg expected_c; integer i; integer passed; integer failed;\nFADDER dut(s,c,x,y,z);\ninitial begin\n  passed = 0; failed = 0;\n  for(i = 0; i < 8; i = i + 1) begin\n    {x,y,z} = i;\n    expected_s = x ^ y ^ z;\n    expected_c = (x & y) | (y & z) | (x & z);\n    #1;\n    if((s === expected_s) && (c === expected_c)) begin\n      $display(\"TEST|FADDER|%0d|PASS\", i);\n      passed = passed + 1;\n    end else begin\n      $display(\"TEST|FADDER|%0d|FAIL|input=%b%b%b|expected=%b%b|got=%b%b\", i,x,y,z,expected_c,expected_s,c,s);\n      failed = failed + 1;\n    end\n  end\n  if(failed == 0) $display(\"RESULT|FADDER|PASS|%0d/8\", passed);\n  else $display(\"RESULT|FADDER|FAIL|%0d/8\", passed);\n  $finish;\nend\nendmodule"
+        },
+        {
+          "id": "fadder8",
+          "title": "8-bit Adder — FADDER8",
+          "summary": "Ripple-carry 8-bit adder built from eight FADDER blocks (Lab Sheet 2, Task i). Your task — no reference code shown; test your own against a real simulator below.",
+          "signature": "module FADDER8(sum, carry, A, B, CarryIn);",
+          "circuit": {
+            "image": "materials/diagrams/decoder-fadder-circuit.png",
+            "caption": "Section 2 of the diagram: eight FADDER blocks chained by carry."
+          },
+          "testbench": "module autograde_fadder8;\nreg [7:0] A, B; reg CarryIn; wire [7:0] sum; wire carry; reg [8:0] expected; integer passed; integer failed;\nFADDER8 dut(sum,carry,A,B,CarryIn);\ntask check;\n  input integer id; input [7:0] testA; input [7:0] testB; input testCin;\n  begin\n    A = testA; B = testB; CarryIn = testCin;\n    expected = {1'b0,testA} + {1'b0,testB} + testCin;\n    #1;\n    if({carry,sum} === expected) begin\n      $display(\"TEST|FADDER8|%0d|PASS\",id);\n      passed = passed + 1;\n    end else begin\n      $display(\"TEST|FADDER8|%0d|FAIL|A=%h|B=%h|Cin=%b|expected=%h|got=%b_%h\",id,A,B,CarryIn,expected,carry,sum);\n      failed = failed + 1;\n    end\n  end\nendtask\ninitial begin\n  passed = 0; failed = 0;\n  check(1, 8'h00, 8'h00, 1'b0);\n  check(2, 8'h01, 8'h01, 1'b0);\n  check(3, 8'h0F, 8'h01, 1'b0);\n  check(4, 8'h7F, 8'h01, 1'b0);\n  check(5, 8'hFF, 8'h00, 1'b0);\n  check(6, 8'hFF, 8'h01, 1'b0);\n  check(7, 8'h55, 8'hAA, 1'b0);\n  check(8, 8'hA5, 8'h5A, 1'b1);\n  check(9, 8'h80, 8'h80, 1'b0);\n  check(10,8'h12, 8'h34, 1'b1);\n  if(failed == 0) $display(\"RESULT|FADDER8|PASS|%0d/10\",passed);\n  else $display(\"RESULT|FADDER8|FAIL|%0d/10\",passed);\n  $finish;\nend\nendmodule"
+        },
+        {
+          "id": "fadder32",
+          "title": "32-bit Adder — FADDER32",
+          "summary": "Ripple-carry 32-bit adder built from four FADDER8 blocks (Lab Sheet 2, Task ii). Your task — no reference code shown; test your own against a real simulator below.",
+          "signature": "module FADDER32(sum, carry, A, B, CarryIn);",
+          "circuit": {
+            "image": "materials/diagrams/decoder-fadder-circuit.png",
+            "caption": "Section 3 of the diagram: four FADDER8 blocks chained by carry."
+          },
+          "testbench": "module autograde_fadder32;\nreg [31:0] A, B; reg CarryIn; wire [31:0] sum; wire carry; reg [32:0] expected; integer passed; integer failed;\nFADDER32 dut(sum,carry,A,B,CarryIn);\ntask check;\n  input integer id; input [31:0] testA; input [31:0] testB; input testCin;\n  begin\n    A = testA; B = testB; CarryIn = testCin;\n    expected = {1'b0,testA} + {1'b0,testB} + testCin;\n    #1;\n    if({carry,sum} === expected) begin\n      $display(\"TEST|FADDER32|%0d|PASS\",id);\n      passed = passed + 1;\n    end else begin\n      $display(\"TEST|FADDER32|%0d|FAIL|A=%h|B=%h|Cin=%b|expected=%h|got=%b_%h\",id,A,B,CarryIn,expected,carry,sum);\n      failed = failed + 1;\n    end\n  end\nendtask\ninitial begin\n  passed = 0; failed = 0;\n  check(1,  32'h00000000, 32'h00000000, 1'b0);\n  check(2,  32'h00000001, 32'h00000001, 1'b0);\n  check(3,  32'h000000FF, 32'h00000001, 1'b0);\n  check(4,  32'h0000FFFF, 32'h00000001, 1'b0);\n  check(5,  32'h00FFFFFF, 32'h00000001, 1'b0);\n  check(6,  32'hFFFFFFFF, 32'h00000001, 1'b0);\n  check(7,  32'hFFFFFFFF, 32'h00000000, 1'b1);\n  check(8,  32'hFFFFFFFF, 32'hFFFFFFFF, 1'b0);\n  check(9,  32'h12345678, 32'h11111111, 1'b0);\n  check(10, 32'hAAAAAAAA, 32'h55555555, 1'b0);\n  check(11, 32'hAAAAAAAA, 32'h55555555, 1'b1);\n  check(12, 32'h80000000, 32'h80000000, 1'b0);\n  if(failed == 0) $display(\"RESULT|FADDER32|PASS|%0d/12\",passed);\n  else $display(\"RESULT|FADDER32|FAIL|%0d/12\",passed);\n  $finish;\nend\nendmodule"
+        },
+        {
+          "id": "fulladder",
+          "title": "Full Adder — Behavioral",
+          "summary": "A 1-bit full adder written with behavioral modeling (an always block), Lab Sheet 2 Exercise 3. Your task — no reference code shown; test your own against a real simulator below.",
+          "signature": "module FULLADDER(s, c, x, y, z);",
+          "simulate": "fulladder",
+          "inputs": [
+            { "name": "x", "default": 0, "side": "left" },
+            { "name": "y", "default": 0, "side": "left" },
+            { "name": "z", "default": 0, "side": "left" }
+          ],
+          "outputs": [
+            { "name": "s" },
+            { "name": "c" }
+          ],
+          "testbench": "module autograde_fulladder;\nreg x, y, z; wire s, c; reg expected_s; reg expected_c; integer i; integer passed; integer failed;\nFULLADDER dut(s,c,x,y,z);\ninitial begin\n  passed = 0; failed = 0;\n  for(i = 0; i < 8; i = i + 1) begin\n    {x,y,z} = i;\n    expected_s = x ^ y ^ z;\n    expected_c = (x & y) | (x & z) | (y & z);\n    #1;\n    if((s === expected_s) && (c === expected_c)) begin\n      $display(\"TEST|FULLADDER|%0d|PASS\",i);\n      passed = passed + 1;\n    end else begin\n      $display(\"TEST|FULLADDER|%0d|FAIL|input=%b%b%b|expected=%b%b|got=%b%b\",i,x,y,z,expected_c,expected_s,c,s);\n      failed = failed + 1;\n    end\n  end\n  if(failed == 0) $display(\"RESULT|FULLADDER|PASS|%0d/8\",passed);\n  else $display(\"RESULT|FULLADDER|FAIL|%0d/8\",passed);\n  $finish;\nend\nendmodule"
+        },
+        {
+          "id": "addsub",
+          "title": "Add/Subtract Unit — ADDSUB",
+          "summary": "4-bit add/subtract circuit built from FULLADDER blocks; M selects add (0) or subtract (1), V flags signed overflow (Lab Sheet 2, Exercise 3). Your task — no reference code shown; test your own against a real simulator below.",
+          "signature": "module ADDSUB(S, V, A, B, M);",
+          "simulate": "addsub",
+          "inputs": [
+            { "name": "A[0]", "default": 0, "side": "left" },
+            { "name": "A[1]", "default": 0, "side": "left" },
+            { "name": "A[2]", "default": 0, "side": "left" },
+            { "name": "A[3]", "default": 0, "side": "left" },
+            { "name": "B[0]", "default": 0, "side": "left" },
+            { "name": "B[1]", "default": 0, "side": "left" },
+            { "name": "B[2]", "default": 0, "side": "left" },
+            { "name": "B[3]", "default": 0, "side": "left" },
+            { "name": "M", "default": 0, "side": "bottom" }
+          ],
+          "outputs": [
+            { "name": "S[0]" },
+            { "name": "S[1]" },
+            { "name": "S[2]" },
+            { "name": "S[3]" },
+            { "name": "V" }
+          ],
+          "testbench": "module autograde_addsub;\nreg [3:0] A, B; reg M; wire [3:0] S; wire V; reg [3:0] expected_s; reg expected_v; integer passed; integer failed;\nADDSUB dut(S,V,A,B,M);\ntask check;\n  input integer id; input [3:0] testA; input [3:0] testB; input testM;\n  begin\n    A = testA; B = testB; M = testM;\n    expected_s = testA + (testB ^ {4{testM}}) + testM;\n    if(testM == 1'b0) expected_v = (~(testA[3] ^ testB[3])) & (expected_s[3] ^ testA[3]);\n    else expected_v = (testA[3] ^ testB[3]) & (expected_s[3] ^ testA[3]);\n    #1;\n    if((S === expected_s) && (V === expected_v)) begin\n      $display(\"TEST|ADDSUB|%0d|PASS\",id);\n      passed = passed + 1;\n    end else begin\n      $display(\"TEST|ADDSUB|%0d|FAIL|A=%b|B=%b|M=%b|expectedS=%b|expectedV=%b|gotS=%b|gotV=%b\",id,A,B,M,expected_s,expected_v,S,V);\n      failed = failed + 1;\n    end\n  end\nendtask\ninitial begin\n  passed = 0; failed = 0;\n  check(1,  4'b0000, 4'b0000, 1'b0);\n  check(2,  4'b0010, 4'b0011, 1'b0);\n  check(3,  4'b0101, 4'b0010, 1'b0);\n  check(4,  4'b0111, 4'b0001, 1'b0);\n  check(5,  4'b1000, 4'b1111, 1'b0);\n  check(6,  4'b1111, 4'b0001, 1'b0);\n  check(7,  4'b1101, 4'b0010, 1'b0);\n  check(8,  4'b1000, 4'b0111, 1'b0);\n  check(9,  4'b0101, 4'b0011, 1'b1);\n  check(10, 4'b0011, 4'b0101, 1'b1);\n  check(11, 4'b0000, 4'b0000, 1'b1);\n  check(12, 4'b0111, 4'b1111, 1'b1);\n  check(13, 4'b1000, 4'b0001, 1'b1);\n  check(14, 4'b1000, 4'b1111, 1'b1);\n  check(15, 4'b1111, 4'b0111, 1'b1);\n  check(16, 4'b0110, 4'b0010, 1'b1);\n  if(failed == 0) $display(\"RESULT|ADDSUB|PASS|%0d/16\",passed);\n  else $display(\"RESULT|ADDSUB|FAIL|%0d/16\",passed);\n  $finish;\nend\nendmodule"
         }
       ]
     }
