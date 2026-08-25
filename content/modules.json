@@ -11,12 +11,12 @@
           "signature": "module mux4to1_gate(out, in, sel);",
           "simulate": "mux4to1-gate",
           "inputs": [
-            { "name": "sel[1]", "default": 0 },
-            { "name": "sel[0]", "default": 0 },
-            { "name": "in[0]", "default": 1 },
-            { "name": "in[1]", "default": 0 },
-            { "name": "in[2]", "default": 0 },
-            { "name": "in[3]", "default": 0 }
+            { "name": "sel[1]", "default": 0, "side": "bottom" },
+            { "name": "sel[0]", "default": 0, "side": "bottom" },
+            { "name": "in[0]", "default": 1, "side": "left" },
+            { "name": "in[1]", "default": 0, "side": "left" },
+            { "name": "in[2]", "default": 0, "side": "left" },
+            { "name": "in[3]", "default": 0, "side": "left" }
           ],
           "outputs": [
             { "name": "out" }

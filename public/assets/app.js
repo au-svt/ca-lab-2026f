@@ -117,6 +117,261 @@ const STEP_DIAGRAMS = {
   'mux4to1-gate': muxDiagramSvg
 };
 
+function groupBits(names) {
+  const groups = new Map();
+  names.forEach(name => {
+    const match = name.match(/^(.+)\[(\d+)\]$/);
+    const base = match ? match[1] : name;
+    const index = match ? Number(match[2]) : 0;
+    if (!groups.has(base)) groups.set(base, []);
+    groups.get(base).push({ name, index });
+  });
+  return [...groups.entries()].map(([base, members]) => ({
+    base,
+    width: members.length,
+    members: members.slice().sort((a, b) => a.index - b.index)
+  }));
+}
+
+function formatBusLegend(groups, values) {
+  return groups.map(g => `${g.base}=${g.width}'b${g.members.map(m => values[m.name] ?? 0).join('')}`).join(' | ');
+}
+
+// --- Playground: a small gate-level Verilog parser + combinational simulator, so
+// students can paste their own code and have it checked against the reference
+// SIMULATORS function across many input combinations. Deliberately scoped to gate
+// primitives only (and/or/not/nand/nor/xor/xnor/buf) — assign/always are not
+// supported yet and raise a clear error rather than being silently mishandled.
+class VerilogError extends Error {
+  constructor(message, line) {
+    super(line ? `Line ${line}: ${message}` : message);
+  }
+}
+
+function tokenizeVerilog_forSim(source) {
+  const clean = source
+    .replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '))
+    .replace(/\/\/[^\n]*/g, '');
+  const tokens = [];
+  const re = /(\d+'[bBhHdD][0-9a-fA-Fxz]+)|(\d+)|([A-Za-z_]\w*)|(\S)/g;
+  let line = 1, lastIndex = 0, match;
+  while ((match = re.exec(clean))) {
+    line += (clean.slice(lastIndex, match.index).match(/\n/g) || []).length;
+    lastIndex = match.index;
+    const [, numLit, num, ident, sym] = match;
+    if (numLit) tokens.push({ type: 'number', value: numLit, line });
+    else if (num) tokens.push({ type: 'number', value: num, line });
+    else if (ident) tokens.push({ type: 'ident', value: ident, line });
+    else if (sym) tokens.push({ type: 'sym', value: sym, line });
+  }
+  tokens.push({ type: 'eof', value: '<end of file>', line });
+  return tokens;
+}
+
+const VERILOG_GATE_TYPES = new Set(['and', 'or', 'not', 'nand', 'nor', 'xor', 'xnor', 'buf']);
+
+function parseVerilogModule(source) {
+  const tokens = tokenizeVerilog_forSim(source);
+  let pos = 0;
+  const peek = () => tokens[pos];
+  const next = () => tokens[pos++];
+  const expect = (type, value) => {
+    const t = next();
+    if (t.type !== type || (value !== undefined && t.value !== value)) {
+      throw new VerilogError(`expected "${value ?? type}" but found "${t.value}"`, t.line);
+    }
+    return t;
+  };
+  const expectIdent = () => expect('ident').value;
+  const parseNet = () => {
+    const name = expectIdent();
+    if (peek().value === '[') {
+      next();
+      const idx = parseInt(expect('number').value, 10);
+      expect('sym', ']');
+      return `${name}[${idx}]`;
+    }
+    return name;
+  };
+  const parseRange = () => {
+    if (peek().value !== '[') return null;
+    next();
+    const msb = parseInt(expect('number').value, 10);
+    expect('sym', ':');
+    const lsb = parseInt(expect('number').value, 10);
+    expect('sym', ']');
+    return { width: Math.abs(msb - lsb) + 1 };
+  };
+
+  if (peek().type === 'eof') throw new VerilogError('the code is empty', peek().line);
+  expect('ident', 'module');
+  const moduleName = expectIdent();
+  expect('sym', '(');
+  if (peek().value !== ')') {
+    expectIdent();
+    while (peek().value === ',') { next(); expectIdent(); }
+  }
+  expect('sym', ')');
+  expect('sym', ';');
+
+  const ports = {};
+  const gates = [];
+  while (peek().type !== 'eof' && peek().value !== 'endmodule') {
+    const tok = peek();
+    if (tok.type === 'ident' && (tok.value === 'input' || tok.value === 'output' || tok.value === 'inout')) {
+      const dir = next().value;
+      const range = parseRange();
+      const names = [expectIdent()];
+      while (peek().value === ',') { next(); names.push(expectIdent()); }
+      expect('sym', ';');
+      names.forEach(name => { ports[name] = { dir, width: range ? range.width : 1 }; });
+      continue;
+    }
+    if (tok.type === 'ident' && (tok.value === 'wire' || tok.value === 'reg')) {
+      next();
+      parseRange();
+      expectIdent();
+      while (peek().value === ',') { next(); expectIdent(); }
+      expect('sym', ';');
+      continue;
+    }
+    if (tok.type === 'ident' && VERILOG_GATE_TYPES.has(tok.value)) {
+      const gateType = next().value;
+      if (peek().type === 'ident') next(); // optional instance name, unused
+      expect('sym', '(');
+      const nets = [parseNet()];
+      while (peek().value === ',') { next(); nets.push(parseNet()); }
+      expect('sym', ')');
+      expect('sym', ';');
+      gates.push({ type: gateType, nets, line: tok.line });
+      continue;
+    }
+    throw new VerilogError(`unsupported statement starting with "${tok.value}" — the playground currently checks gate-level Verilog only (module/input/output/wire declarations plus and/or/not/nand/nor/xor/xnor/buf instantiations). assign and always blocks aren't supported yet.`, tok.line);
+  }
+  if (peek().type === 'eof') throw new VerilogError('missing "endmodule"', peek().line);
+  expect('ident', 'endmodule');
+  return { name: moduleName, ports, gates };
+}
+
+const VERILOG_GATE_EVAL = {
+  and: bits => (bits.every(b => b === 1) ? 1 : 0),
+  or: bits => (bits.some(b => b === 1) ? 1 : 0),
+  nand: bits => (bits.every(b => b === 1) ? 0 : 1),
+  nor: bits => (bits.some(b => b === 1) ? 0 : 1),
+  xor: bits => bits.reduce((a, b) => a ^ b, 0),
+  xnor: bits => 1 - bits.reduce((a, b) => a ^ b, 0)
+};
+
+function simulateParsedModule(parsed, inputValues) {
+  const signals = { ...inputValues };
+  const isKnown = net => signals[net] === 0 || signals[net] === 1;
+  let progressed = true, iterations = 0;
+  while (progressed && iterations < 500) {
+    progressed = false;
+    iterations++;
+    for (const gate of parsed.gates) {
+      const { type, nets } = gate;
+      if (type === 'not' || type === 'buf') {
+        const input = nets[nets.length - 1];
+        if (!isKnown(input)) continue;
+        const value = type === 'not' ? 1 - signals[input] : signals[input];
+        for (const out of nets.slice(0, -1)) {
+          if (signals[out] !== value) { signals[out] = value; progressed = true; }
+        }
+      } else {
+        const inputs = nets.slice(1);
+        if (!inputs.every(isKnown)) continue;
+        const value = VERILOG_GATE_EVAL[type](inputs.map(n => signals[n]));
+        if (signals[nets[0]] !== value) { signals[nets[0]] = value; progressed = true; }
+      }
+    }
+  }
+  if (iterations >= 500) throw new VerilogError('the circuit did not settle after 500 propagation passes — check for a combinational loop, or a gate referencing a net that is never driven');
+  return signals;
+}
+
+function generateTestVectors(inputBitNames) {
+  const total = inputBitNames.length;
+  if (total <= 16) {
+    return Array.from({ length: 2 ** total }, (_, i) => {
+      const values = {};
+      inputBitNames.forEach((name, bitPos) => { values[name] = (i >> bitPos) & 1; });
+      return values;
+    });
+  }
+  return Array.from({ length: 512 }, () => {
+    const values = {};
+    inputBitNames.forEach(name => { values[name] = Math.random() < 0.5 ? 0 : 1; });
+    return values;
+  });
+}
+
+function runPlaygroundTests(module, sourceCode) {
+  const expectedName = (module.signature.match(/module\s+(\w+)/) || [, ''])[1];
+  const parsed = parseVerilogModule(sourceCode);
+  if (parsed.name !== expectedName) throw new VerilogError(`expected a module named "${expectedName}" but found "${parsed.name}"`);
+
+  const inputGroups = groupBits(module.inputs.map(i => i.name));
+  const outputGroups = groupBits(module.outputs.map(o => o.name));
+  for (const group of [...inputGroups.map(g => ({ ...g, dir: 'input' })), ...outputGroups.map(g => ({ ...g, dir: 'output' }))]) {
+    const found = parsed.ports[group.base];
+    if (!found) throw new VerilogError(`missing ${group.dir} port "${group.base}" (expected width ${group.width})`);
+    if (found.dir !== group.dir) throw new VerilogError(`port "${group.base}" should be ${group.dir}, but your code declares it as ${found.dir}`);
+    if (found.width !== group.width) throw new VerilogError(`port "${group.base}" should be width ${group.width}, but your code declares width ${found.width}`);
+  }
+
+  const simulate = SIMULATORS[module.simulate];
+  const inputBitNames = module.inputs.map(i => i.name);
+  const outputBitNames = module.outputs.map(o => o.name);
+  let pass = 0;
+  const cases = generateTestVectors(inputBitNames).map(values => {
+    const expected = simulate(values);
+    const signals = simulateParsedModule(parsed, values);
+    const got = {};
+    outputBitNames.forEach(name => { got[name] = signals[name] ?? 'x'; });
+    const ok = outputBitNames.every(name => got[name] === expected[name]);
+    if (ok) pass++;
+    return { values, expected, got, ok };
+  });
+  return { total: cases.length, pass, cases };
+}
+
+function playgroundSpecHtml(module) {
+  const inputGroups = groupBits(module.inputs.map(i => i.name));
+  const outputGroups = groupBits(module.outputs.map(o => o.name));
+  const name = (module.signature.match(/module\s+(\w+)/) || [, ''])[1];
+  const describe = g => `<code>${escapeHtml(g.base)}</code> (${g.width}-bit)`;
+  const exhaustive = module.inputs.length <= 16;
+  return `Implement <code>${escapeHtml(name)}</code> with input${inputGroups.length > 1 ? 's' : ''} ${inputGroups.map(describe).join(' and ')} and output${outputGroups.length > 1 ? 's' : ''} ${outputGroups.map(describe).join(' and ')}. Gate-level Verilog only for now — <code>and</code>/<code>or</code>/<code>not</code>/<code>nand</code>/<code>nor</code>/<code>xor</code>/<code>xnor</code>/<code>buf</code> primitive instantiations (no <code>assign</code>/<code>always</code> yet). Paste your code and click Run to test it against ${exhaustive ? 'every possible input combination' : 'a sample of input combinations'}.`;
+}
+
+function playgroundTemplate(module) {
+  const decl = (g, dir) => g.width > 1 ? `${dir} [0:${g.width - 1}] ${g.base};` : `${dir} ${g.base};`;
+  return [
+    module.signature,
+    ...groupBits(module.inputs.map(i => i.name)).map(g => decl(g, 'input')),
+    ...groupBits(module.outputs.map(o => o.name)).map(g => decl(g, 'output')),
+    '', '// your gate-level code here', '', 'endmodule'
+  ].join('\n');
+}
+
+function renderPlaygroundResults(module, sourceCode) {
+  if (!sourceCode.trim()) return '<div class="empty-state">Paste your code above and click Run to see results.</div>';
+  try {
+    const result = runPlaygroundTests(module, sourceCode);
+    const allPass = result.pass === result.total;
+    const inputGroups = groupBits(module.inputs.map(i => i.name));
+    const outputGroups = groupBits(module.outputs.map(o => o.name));
+    const failing = result.cases.filter(c => !c.ok);
+    const shown = allPass ? result.cases.slice(0, 12) : failing.slice(0, 30);
+    const rows = shown.map(c => `<div class="playground-case" data-pass="${c.ok}"><span class="playground-case-mark">${c.ok ? '✓' : '✗'}</span><span>${escapeHtml(formatBusLegend(inputGroups, c.values))} → expected ${escapeHtml(formatBusLegend(outputGroups, c.expected))}, got ${escapeHtml(formatBusLegend(outputGroups, c.got))}</span></div>`).join('');
+    const more = !allPass && failing.length > shown.length ? `<p class="empty-state">+ ${failing.length - shown.length} more failing case(s) not shown.</p>` : '';
+    return `<p class="playground-summary" data-pass="${allPass}">${result.pass} / ${result.total} test cases passed</p><div class="playground-cases">${rows}</div>${more}`;
+  } catch (err) {
+    return `<div class="playground-error">${escapeHtml(err.message)}</div>`;
+  }
+}
+
 const moduleState = { pinValues: {}, stepIndex: {} };
 const labTabState = { activeLab: null };
 
@@ -133,15 +388,34 @@ function renderPinDiagram(module) {
   const simulate = SIMULATORS[module.simulate];
   const outputs = simulate ? simulate(values) : {};
   const boxLabel = (module.signature.match(/module\s+(\w+)/) || [, module.title])[1];
-  const inputsHtml = module.inputs.map(input => {
+
+  const inputPin = (input, vertical) => {
     const value = values[input.name];
-    return `<button class="pin-toggle" type="button" data-pin-bit="${escapeHtml(input.name)}" data-bit-value="${value}" aria-pressed="${value === 1}"><span class="pin-toggle-bit">${value}</span>${escapeHtml(input.name)}</button>`;
-  }).join('');
-  const outputsHtml = module.outputs.map(output => {
+    const inputEl = `<input class="pin-input" type="text" inputmode="numeric" maxlength="1" data-pin-bit="${escapeHtml(input.name)}" value="${value}" aria-label="${escapeHtml(input.name)}" />`;
+    const nameEl = `<span class="pin-name">${escapeHtml(input.name)}</span>`;
+    const arrowEl = `<span class="pin-arrow" aria-hidden="true">${vertical ? '↑' : '→'}</span>`;
+    return vertical ? `<div class="pin-item pin-item-bottom">${arrowEl}${inputEl}${nameEl}</div>` : `<div class="pin-item">${nameEl}${inputEl}${arrowEl}</div>`;
+  };
+
+  const leftHtml = module.inputs.filter(i => (i.side || 'left') !== 'bottom').map(i => inputPin(i, false)).join('');
+  const bottomHtml = module.inputs.filter(i => i.side === 'bottom').map(i => inputPin(i, true)).join('');
+  const rightHtml = module.outputs.map(output => {
     const value = outputs[output.name] ?? 0;
-    return `<span class="pin-readout" data-bit-value="${value}"><span class="pin-toggle-bit">${value}</span>${escapeHtml(output.name)}</span>`;
+    return `<div class="pin-item"><span class="pin-arrow" aria-hidden="true">→</span><span class="pin-readout" data-bit-value="${value}">${value}</span><span class="pin-name">${escapeHtml(output.name)}</span></div>`;
   }).join('');
-  return `<div class="pin-col pin-col-in">${inputsHtml}</div><div class="pin-box">${escapeHtml(boxLabel)}</div><div class="pin-col pin-col-out">${outputsHtml}</div>`;
+
+  const legend = [
+    formatBusLegend(groupBits(module.inputs.map(i => i.name)), values),
+    formatBusLegend(groupBits(module.outputs.map(o => o.name)), outputs)
+  ].filter(Boolean).join(' | ');
+
+  return `<div class="pin-diagram-main">
+    <div class="pin-side pin-side-left">${leftHtml}</div>
+    <div class="pin-box">${escapeHtml(boxLabel)}</div>
+    <div class="pin-side pin-side-right">${rightHtml}</div>
+    ${bottomHtml ? `<div class="pin-side-bottom">${bottomHtml}</div>` : ''}
+  </div>
+  <p class="pin-legend">${escapeHtml(legend)}</p>`;
 }
 
 function renderSlideWidget(module) {
@@ -166,10 +440,10 @@ function renderModuleCard(module) {
     </button>
     <div class="module-body" hidden>
       <span class="module-signature">${escapeHtml(module.signature)}</span>
-      <h4 class="module-subhead">Interactive diagram</h4>
-      <div class="pin-diagram" data-pin-diagram></div>
-      <h4 class="module-subhead">Circuit diagram</h4>
-      <figure class="circuit-figure"><img src="${encodeURI(module.circuit.image)}" alt="${escapeHtml(module.title)} circuit diagram" loading="lazy" /><figcaption>${escapeHtml(module.circuit.caption)}</figcaption></figure>
+      <div class="module-grid">
+        <div><h4 class="module-subhead">Interactive diagram</h4><div class="pin-diagram" data-pin-diagram></div></div>
+        <div><h4 class="module-subhead">Circuit diagram</h4><figure class="circuit-figure"><img src="${encodeURI(module.circuit.image)}" alt="${escapeHtml(module.title)} circuit diagram" loading="lazy" /><figcaption>${escapeHtml(module.circuit.caption)}</figcaption></figure></div>
+      </div>
       <h4 class="module-subhead">Verilog code</h4>
       <div class="code-block">
         <div class="code-block-head"><span>${escapeHtml(module.id)}.v</span><button class="code-copy" type="button" data-copy>Copy</button></div>
@@ -177,6 +451,17 @@ function renderModuleCard(module) {
       </div>
       <h4 class="module-subhead">Building the code, step by step</h4>
       <div class="slide-widget" data-slide-widget></div>
+      <h4 class="module-subhead">Playground</h4>
+      <div class="playground">
+        <p class="playground-spec">${playgroundSpecHtml(module)}</p>
+        <div class="playground-grid">
+          <div class="playground-editor">
+            <textarea class="playground-code" data-playground-code spellcheck="false" placeholder="${escapeHtml(playgroundTemplate(module))}"></textarea>
+            <button class="button button-primary playground-run" type="button" data-playground-run>Run tests</button>
+          </div>
+          <div class="playground-results" data-playground-results><div class="empty-state">Paste your code and click Run to see results.</div></div>
+        </div>
+      </div>
     </div>
   </article>`;
 }
@@ -204,15 +489,6 @@ function wireModuleInteractions(moduleLabs) {
       return;
     }
 
-    const pinButton = event.target.closest('.pin-toggle');
-    if (pinButton) {
-      const values = moduleState.pinValues[module.id];
-      const bit = pinButton.dataset.pinBit;
-      values[bit] = values[bit] ? 0 : 1;
-      moduleCard.querySelector('[data-pin-diagram]').innerHTML = renderPinDiagram(module);
-      return;
-    }
-
     const copyButton = event.target.closest('[data-copy]');
     if (copyButton) {
       (navigator.clipboard?.writeText(module.code) ?? Promise.reject()).then(() => {
@@ -233,7 +509,29 @@ function wireModuleInteractions(moduleLabs) {
       const idx = moduleState.stepIndex[module.id] || 0;
       moduleState.stepIndex[module.id] = prevButton ? Math.max(0, idx - 1) : Math.min(steps.length - 1, idx + 1);
       moduleCard.querySelector('[data-slide-widget]').innerHTML = renderSlideWidget(module);
+      return;
     }
+
+    const runButton = event.target.closest('[data-playground-run]');
+    if (runButton) {
+      const code = moduleCard.querySelector('[data-playground-code]').value;
+      moduleCard.querySelector('[data-playground-results]').innerHTML = renderPlaygroundResults(module, code);
+    }
+  });
+
+  panelsEl.addEventListener('input', event => {
+    const pinInput = event.target.closest('.pin-input');
+    if (!pinInput) return;
+    const moduleCard = event.target.closest('[data-module]');
+    const module = findModule(moduleLabs, moduleCard.dataset.module);
+    const bit = pinInput.dataset.pinBit;
+    const values = moduleState.pinValues[module.id];
+    const sanitized = pinInput.value.replace(/[^01]/g, '');
+    values[bit] = sanitized ? Number(sanitized[sanitized.length - 1]) : values[bit];
+    const container = moduleCard.querySelector('[data-pin-diagram]');
+    container.innerHTML = renderPinDiagram(module);
+    const refocused = container.querySelector(`[data-pin-bit="${CSS.escape(bit)}"]`);
+    if (refocused) { refocused.focus(); refocused.select(); }
   });
 }
 
