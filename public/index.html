@@ -16,6 +16,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="assets/styles.css" />
+    <script src="assets/shared.js" defer></script>
     <script src="assets/app.js" defer></script>
   </head>
   <body>
@@ -26,7 +27,7 @@
         <a class="brand" href="#top" aria-label="CS F342 homepage"><span class="brand-code">CS F342</span><span class="brand-name">Computer Architecture Lab</span></a>
         <button class="menu-button" type="button" aria-expanded="false" aria-controls="site-nav" data-menu-button><span class="sr-only">Open navigation</span><i></i><i></i><i></i></button>
         <nav id="site-nav" class="site-nav" aria-label="Main navigation" data-nav>
-          <a href="#live">Additional resources</a><a href="#announcements">Announcements</a><a href="#lab-sheets">Lab sheets</a><a href="#schedule">Schedule</a><a href="#feedback">Feedback</a>
+          <a href="#feedback">Feedback</a><a href="#live">Additional resources</a><a href="#announcements">Announcements</a><span data-nav-labs></span><a href="#schedule">Schedule</a>
         </nav>
       </div>
     </header>
@@ -49,44 +50,9 @@
 
       <section class="notice-strip" aria-label="Course reminder"><div class="container"><strong>Before your lab:</strong><span>Check additional resources and open the latest lab sheet.</span></div></section>
 
-      <section class="section accent-teal" id="live">
-        <div class="container">
-          <div class="section-heading"><div><span class="section-number">01</span><h2>Additional lab resources</h2></div><p>Live links, files, code, and instructions for the current lab. This area refreshes automatically.</p></div>
-          <div class="live-board" data-live-board aria-live="polite" aria-busy="true"><div class="board-loading"><span class="status-dot"></span>Checking for live updates…</div></div>
-          <div class="live-meta"><span data-live-status>Connecting to the live board…</span><span>Updates appear here automatically.</span></div>
-        </div>
-      </section>
-
-      <section class="section section-soft accent-amber" id="announcements">
-        <div class="container">
-          <div class="section-heading"><div><span class="section-number">02</span><h2>Announcements</h2></div><p>Official course updates and reminders for P4 and P7.</p></div>
-          <div class="announcement-list" data-announcements><div class="empty-state">Loading announcements…</div></div>
-        </div>
-      </section>
-
-      <section class="section accent-blue" id="lab-sheets">
-        <div class="container">
-          <div class="section-heading"><div><span class="section-number">03</span><h2>Lab sheets</h2></div><p>Each lab has its own tab: the released PDF plus any interactive materials for that lab. Nothing from other labs shows while you're viewing one.</p></div>
-          <div class="resource-list" data-resources></div>
-          <div class="lab-tabs" data-lab-tabs role="tablist" aria-label="Lab"></div>
-          <div class="lab-panels" data-lab-panels aria-live="polite"><div class="empty-state">Loading lab sheets…</div></div>
-        </div>
-      </section>
-
-      <section class="section section-soft accent-violet" id="schedule">
-        <div class="container">
-          <div class="section-heading"><div><span class="section-number">04</span><h2>Weekly schedule</h2></div><p>Attend the assigned section. Any temporary change will be posted above.</p></div>
-          <div class="schedule-grid" data-schedule></div>
-        </div>
-      </section>
-
-      <section class="section accent-slate" id="guidelines">
-        <div class="container"><div class="section-heading"><div><span class="section-number">05</span><h2>Lab guidelines</h2></div></div><div class="policy-grid" data-policies></div></div>
-      </section>
-
       <section class="section section-soft accent-emerald" id="feedback">
         <div class="container">
-          <div class="section-heading"><div><span class="section-number">06</span><h2>Feedback &amp; queries</h2></div><p>Report an issue, ask a question, or suggest an improvement. Responses are reviewed by the lab instructor.</p></div>
+          <div class="section-heading"><div><span class="section-number">01</span><h2>Feedback &amp; queries</h2></div><p>Report an issue, ask a question, or suggest an improvement. Responses are reviewed by the lab instructor.</p></div>
           <div class="feedback-panel">
             <div class="feedback-icon" aria-hidden="true">✉</div>
             <div class="feedback-copy">
@@ -96,6 +62,40 @@
             <a class="button button-primary" href="https://docs.google.com/forms/d/e/1FAIpQLSc_zppjz11JvbCsoTLzc68xmzctMVyqRVdOA7n5AY0yawC00A/viewform" target="_blank" rel="noopener">Open feedback form ↗</a>
           </div>
         </div>
+      </section>
+
+      <section class="section accent-teal" id="live">
+        <div class="container">
+          <div class="section-heading"><div><span class="section-number">02</span><h2>Additional lab resources</h2></div><p>Live links, files, code, and instructions for the current lab. This area refreshes automatically.</p></div>
+          <div class="live-board" data-live-board aria-live="polite" aria-busy="true"><div class="board-loading"><span class="status-dot"></span>Checking for live updates…</div></div>
+          <div class="live-meta"><span data-live-status>Connecting to the live board…</span><span>Updates appear here automatically.</span></div>
+        </div>
+      </section>
+
+      <section class="section section-soft accent-amber" id="announcements">
+        <div class="container">
+          <div class="section-heading"><div><span class="section-number">03</span><h2>Announcements</h2></div><p>Official course updates and reminders for P4 and P7.</p></div>
+          <div class="announcement-list" data-announcements><div class="empty-state">Loading announcements…</div></div>
+        </div>
+      </section>
+
+      <section class="section accent-blue" id="lab-sheets">
+        <div class="container">
+          <div class="section-heading"><div><span class="section-number">04</span><h2>Lab sheets</h2></div><p>Each lab has its own page with the released PDF and any interactive materials for that lab.</p></div>
+          <div class="resource-list" data-resources></div>
+          <div class="labs-index" data-labs-index aria-live="polite"><div class="empty-state">Loading lab sheets…</div></div>
+        </div>
+      </section>
+
+      <section class="section section-soft accent-violet" id="schedule">
+        <div class="container">
+          <div class="section-heading"><div><span class="section-number">05</span><h2>Weekly schedule</h2></div><p>Attend the assigned section. Any temporary change will be posted above.</p></div>
+          <div class="schedule-grid" data-schedule></div>
+        </div>
+      </section>
+
+      <section class="section accent-slate" id="guidelines">
+        <div class="container"><div class="section-heading"><div><span class="section-number">06</span><h2>Lab guidelines</h2></div></div><div class="policy-grid" data-policies></div></div>
       </section>
     </main>
 

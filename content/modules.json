@@ -48,6 +48,28 @@
               "code": "module mux4to1_gate(out,in,sel);\ninput [0:3] in;\ninput [0:1] sel;\noutput out;\nwire n1,n2,a1,a2,a3,a4;\n\nnot n(n1,sel[1]);\nnot nn(n2,sel[0]);\n\nand (a1,in[0],n1,n2);\nand (a2,in[1],n2,sel[1]);\nand (a3,in[2],sel[0],n1);\nand (a4,in[3],sel[0],sel[1]);\n\nor or1(out,a1,a2,a3,a4);\nendmodule"
             }
           ]
+        },
+        {
+          "id": "decoder-fadder",
+          "title": "Full Adder using a 3-to-8 Decoder",
+          "summary": "Builds a 1-bit full adder from a 3-to-8 decoder: sum and carry are each an OR of the decoder's minterms.",
+          "signature": "module FADDER(s, c, x, y, z);",
+          "simulate": "decoder-fadder",
+          "playground": false,
+          "inputs": [
+            { "name": "x", "default": 0, "side": "left" },
+            { "name": "y", "default": 0, "side": "left" },
+            { "name": "z", "default": 0, "side": "left" }
+          ],
+          "outputs": [
+            { "name": "s" },
+            { "name": "c" }
+          ],
+          "circuit": {
+            "image": "materials/diagrams/decoder-fadder-circuit.png",
+            "caption": "1-bit full adder via decoder (Lab Sheet 2, Exercise 1), scaled to 8-bit and 32-bit adders."
+          },
+          "code": "module DECODER(d0,d1,d2,d3,d4,d5,d6,d7,x,y,z);\ninput x,y,z;\noutput d0,d1,d2,d3,d4,d5,d6,d7;\nwire x0,y0,z0;\nnot n1(x0,x);\nnot n2(y0,y);\nnot n3(z0,z);\nand a0(d0,x0,y0,z0);\nand a1(d1,x0,y0,z);\nand a2(d2,x0,y,z0);\nand a3(d3,x0,y,z);\nand a4(d4,x,y0,z0);\nand a5(d5,x,y0,z);\nand a6(d6,x,y,z0);\nand a7(d7,x,y,z);\nendmodule\n\nmodule FADDER(s,c,x,y,z);\ninput x,y,z;\nwire d0,d1,d2,d3,d4,d5,d6,d7;\noutput s,c;\nDECODER dec(d0,d1,d2,d3,d4,d5,d6,d7,x,y,z);\nassign s = d1 | d2 | d4 | d7,\n       c = d3 | d5 | d6 | d7;\nendmodule"
         }
       ]
     }
