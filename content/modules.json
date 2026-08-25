@@ -1,0 +1,55 @@
+{
+  "labs": [
+    {
+      "lab": 2,
+      "label": "Lab 2",
+      "modules": [
+        {
+          "id": "mux4to1-gate",
+          "title": "4x1 Multiplexer — Gate Level",
+          "summary": "Selects one of four 1-bit data inputs using two select lines, built from NOT, AND, and OR gates.",
+          "signature": "module mux4to1_gate(out, in, sel);",
+          "simulate": "mux4to1-gate",
+          "inputs": [
+            { "name": "sel[1]", "default": 0 },
+            { "name": "sel[0]", "default": 0 },
+            { "name": "in[0]", "default": 1 },
+            { "name": "in[1]", "default": 0 },
+            { "name": "in[2]", "default": 0 },
+            { "name": "in[3]", "default": 0 }
+          ],
+          "outputs": [
+            { "name": "out" }
+          ],
+          "circuit": {
+            "image": "materials/diagrams/mux4to1-circuit.png",
+            "caption": "Circuit diagram as given in Lab Sheet 2."
+          },
+          "code": "module mux4to1_gate(out,in,sel);\ninput [0:3] in;\ninput [0:1] sel;\noutput out;\nwire n1,n2,a1,a2,a3,a4;\n\nnot n(n1,sel[1]);\nnot nn(n2,sel[0]);\n\nand (a1,in[0],n1,n2);\nand (a2,in[1],n2,sel[1]);\nand (a3,in[2],sel[0],n1);\nand (a4,in[3],sel[0],sel[1]);\n\nor or1(out,a1,a2,a3,a4);\nendmodule",
+          "steps": [
+            {
+              "label": "Module shell — ports only",
+              "stage": "shell",
+              "code": "module mux4to1_gate(out,in,sel);\ninput [0:3] in;\ninput [0:1] sel;\noutput out;\n\nendmodule"
+            },
+            {
+              "label": "Two NOT gates for the select lines",
+              "stage": "not",
+              "code": "module mux4to1_gate(out,in,sel);\ninput [0:3] in;\ninput [0:1] sel;\noutput out;\nwire n1,n2;\n\nnot n(n1,sel[1]);\nnot nn(n2,sel[0]);\n\nendmodule"
+            },
+            {
+              "label": "Four AND gates, one per data input",
+              "stage": "and",
+              "code": "module mux4to1_gate(out,in,sel);\ninput [0:3] in;\ninput [0:1] sel;\noutput out;\nwire n1,n2,a1,a2,a3,a4;\n\nnot n(n1,sel[1]);\nnot nn(n2,sel[0]);\n\nand (a1,in[0],n1,n2);\nand (a2,in[1],n2,sel[1]);\nand (a3,in[2],sel[0],n1);\nand (a4,in[3],sel[0],sel[1]);\n\nendmodule"
+            },
+            {
+              "label": "Wire the AND outputs into the OR gate",
+              "stage": "wired",
+              "code": "module mux4to1_gate(out,in,sel);\ninput [0:3] in;\ninput [0:1] sel;\noutput out;\nwire n1,n2,a1,a2,a3,a4;\n\nnot n(n1,sel[1]);\nnot nn(n2,sel[0]);\n\nand (a1,in[0],n1,n2);\nand (a2,in[1],n2,sel[1]);\nand (a3,in[2],sel[0],n1);\nand (a4,in[3],sel[0],sel[1]);\n\nor or1(out,a1,a2,a3,a4);\nendmodule"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

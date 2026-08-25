@@ -47,5 +47,20 @@ const deployed = {
   buildTime: now.toISOString()
 };
 await writeFile(join(root, 'dist/data/content.json'), `${JSON.stringify(deployed, null, 2)}\n`);
+
+let modules = { labs: [] };
+try {
+  modules = JSON.parse(await readFile(join(root, 'content/modules.json'), 'utf8'));
+} catch {
+  console.warn('Warning: content/modules.json not found; Extra materials section will be empty.');
+}
+await writeFile(join(root, 'dist/data/modules.json'), `${JSON.stringify(modules, null, 2)}\n`);
+
+try {
+  await stat(join(root, 'source-materials/diagrams'));
+  await cp(join(root, 'source-materials/diagrams'), join(root, 'dist/materials/diagrams'), { recursive: true });
+} catch {}
+
 await writeFile(join(root, 'dist/.nojekyll'), '');
-console.log(`Built site with ${deployed.announcements.length} announcement(s), ${resources.length} resource(s), and ${labs.length} visible lab(s).`);
+const moduleCount = modules.labs.reduce((total, lab) => total + (lab.modules || []).length, 0);
+console.log(`Built site with ${deployed.announcements.length} announcement(s), ${resources.length} resource(s), ${labs.length} visible lab(s), and ${moduleCount} extra-material module(s).`);

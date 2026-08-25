@@ -34,6 +34,239 @@ function render(content) {
   $('[data-policies]').innerHTML = content.policies.map(item => `<article class="policy${item.strict ? ' strict' : ''}"><span class="policy-level">${item.strict ? 'STRICT RULE' : 'GUIDELINE'}</span><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.text)}</p></article>`).join('');
 }
 
+const VERILOG_KEYWORDS = new Set(['module', 'endmodule', 'input', 'output', 'inout', 'wire', 'reg', 'assign', 'and', 'or', 'not', 'nand', 'nor', 'xor', 'xnor', 'buf', 'always', 'initial', 'begin', 'end', 'if', 'else', 'case', 'endcase', 'function', 'endfunction', 'posedge', 'negedge', 'parameter']);
+
+function highlightVerilog(code) {
+  const tokenPattern = /(\/\/[^\n]*)|("(?:[^"\\]|\\.)*")|(\d+'[bBhHdD][0-9a-fA-Fxz]*|\b\d+\b)|([A-Za-z_]\w*)|(\s+)|([^\sA-Za-z0-9_])/g;
+  let html = '';
+  let match;
+  while ((match = tokenPattern.exec(code))) {
+    const [, comment, string, number, ident, space, punct] = match;
+    if (comment) html += `<span class="tok-com">${escapeHtml(comment)}</span>`;
+    else if (string) html += `<span class="tok-str">${escapeHtml(string)}</span>`;
+    else if (number) html += `<span class="tok-num">${escapeHtml(number)}</span>`;
+    else if (ident) html += VERILOG_KEYWORDS.has(ident) ? `<span class="tok-kw">${ident}</span>` : `<span class="tok-id">${escapeHtml(ident)}</span>`;
+    else if (space) html += space;
+    else html += escapeHtml(punct);
+  }
+  return html;
+}
+
+// Draws the mux4to1_gate schematic used by the step-by-step slides. `stage` controls
+// how much of the circuit is visible: shell -> +not -> +and -> +wired (cumulative).
+function muxDiagramSvg(stage) {
+  const wireColor = '#4a6a8a', dotColor = '#8fb4d6', textColor = '#9fb7cf', boxColor = '#3a5570', gateFill = '#16283d';
+  const rows = [96, 122, 148, 174];
+  const els = [];
+  const line = d => els.push(`<path d="${d}" fill="none" stroke="${wireColor}" stroke-width="1.5"/>`);
+  const dot = (x, y) => els.push(`<circle cx="${x}" cy="${y}" r="2.2" fill="${dotColor}"/>`);
+  const label = (x, y, s, anchor = 'start') => els.push(`<text x="${x}" y="${y}" text-anchor="${anchor}" font-family="SF Mono, Menlo, monospace" font-size="9" fill="${textColor}">${s}</text>`);
+  const gate = d => els.push(`<path d="${d}" fill="${gateFill}" stroke="${wireColor}" stroke-width="1.5"/>`);
+  const bubble = (cx, cy) => els.push(`<circle cx="${cx}" cy="${cy}" r="3.2" fill="${gateFill}" stroke="${wireColor}" stroke-width="1.5"/>`);
+  const wrap = () => `<svg viewBox="0 0 420 220" xmlns="http://www.w3.org/2000/svg">${els.join('')}</svg>`;
+
+  els.push(`<rect x="64" y="10" width="300" height="196" rx="10" fill="none" stroke="${boxColor}" stroke-width="1.5"/>`);
+  label(214, 25, 'mux4to1_gate', 'middle');
+
+  [['sel[1]', 40], ['sel[0]', 64], ['in[0]', 96], ['in[1]', 122], ['in[2]', 148], ['in[3]', 174]].forEach(([name, y]) => {
+    line(`M40,${y} L64,${y}`);
+    label(36, y + 3, name, 'end');
+  });
+  line('M364,110 L388,110');
+  label(392, 113, 'out');
+
+  if (stage === 'shell') return wrap();
+
+  line('M64,40 L158,40 L158,50');
+  gate('M146,50 L170,50 L158,70 Z');
+  bubble(158, 74);
+  line('M64,64 L198,64 L198,76');
+  gate('M186,76 L210,76 L198,96 Z');
+  bubble(198, 100);
+
+  if (stage === 'not') {
+    line('M158,77.2 L158,96'); label(162, 99, 'n1');
+    line('M198,103.2 L198,122'); label(202, 125, 'n2');
+    return wrap();
+  }
+
+  line('M158,77.2 L158,182');
+  line('M198,103.2 L198,182');
+  rows.forEach(y => { dot(158, y); dot(198, y); });
+  label(162, 187, 'n1'); label(202, 187, 'n2');
+
+  const andLabels = ['a1', 'a2', 'a3', 'a4'];
+  rows.forEach((y, i) => {
+    line(`M64,${y} L258,${y} L258,${y - 6} L278,${y - 6}`);
+    line(`M158,${y} L278,${y}`);
+    line(`M198,${y} L248,${y} L248,${y + 6} L278,${y + 6}`);
+    gate(`M278,${y - 11} L278,${y + 11} L295,${y + 11} A11,11 0 0 1 295,${y - 11} Z`);
+    line(`M306,${y} L318,${y}`);
+    label(320, y - 3, andLabels[i]);
+  });
+
+  if (stage === 'and') return wrap();
+
+  const converge = [92, 101, 119, 128];
+  rows.forEach((y, i) => line(`M318,${y} L328,${converge[i]}`));
+  gate('M325,85 Q345,110 325,135 Q358,132 364,110 Q358,88 325,85 Z');
+  label(340, 114, 'or1', 'middle');
+
+  return wrap();
+}
+
+const SIMULATORS = {
+  'mux4to1-gate': values => {
+    const index = values['sel[0]'] * 2 + values['sel[1]'];
+    return { out: values[`in[${index}]`] };
+  }
+};
+
+const STEP_DIAGRAMS = {
+  'mux4to1-gate': muxDiagramSvg
+};
+
+const extrasState = { pinValues: {}, stepIndex: {}, activeLab: null };
+
+function findModule(labs, id) {
+  for (const lab of labs) {
+    const found = (lab.modules || []).find(module => module.id === id);
+    if (found) return found;
+  }
+  return null;
+}
+
+function renderPinDiagram(module) {
+  const values = extrasState.pinValues[module.id];
+  const simulate = SIMULATORS[module.simulate];
+  const outputs = simulate ? simulate(values) : {};
+  const boxLabel = (module.signature.match(/module\s+(\w+)/) || [, module.title])[1];
+  const inputsHtml = module.inputs.map(input => {
+    const value = values[input.name];
+    return `<button class="pin-toggle" type="button" data-pin-bit="${escapeHtml(input.name)}" data-bit-value="${value}" aria-pressed="${value === 1}"><span class="pin-toggle-bit">${value}</span>${escapeHtml(input.name)}</button>`;
+  }).join('');
+  const outputsHtml = module.outputs.map(output => {
+    const value = outputs[output.name] ?? 0;
+    return `<span class="pin-readout" data-bit-value="${value}"><span class="pin-toggle-bit">${value}</span>${escapeHtml(output.name)}</span>`;
+  }).join('');
+  return `<div class="pin-col pin-col-in">${inputsHtml}</div><div class="pin-box">${escapeHtml(boxLabel)}</div><div class="pin-col pin-col-out">${outputsHtml}</div>`;
+}
+
+function renderSlideWidget(module) {
+  const steps = module.steps || [];
+  const idx = extrasState.stepIndex[module.id] || 0;
+  const step = steps[idx];
+  if (!step) return '<p class="empty-state">No step-by-step walkthrough yet.</p>';
+  const diagramFn = STEP_DIAGRAMS[module.simulate];
+  const dots = steps.map((_, i) => `<span class="slide-dot" data-active="${i === idx}"></span>`).join('');
+  return `<div class="slide-stage"><pre class="slide-code"><code>${highlightVerilog(step.code)}</code></pre><div class="slide-diagram">${diagramFn ? diagramFn(step.stage) : ''}</div></div>
+    <div class="slide-controls"><button type="button" data-slide-prev ${idx === 0 ? 'disabled' : ''} aria-label="Previous step">&lsaquo;</button><div class="slide-dots">${dots}</div><button type="button" data-slide-next ${idx === steps.length - 1 ? 'disabled' : ''} aria-label="Next step">&rsaquo;</button></div>
+    <p class="slide-label">Step ${idx + 1} of ${steps.length} — ${escapeHtml(step.label)}</p>`;
+}
+
+function renderModuleCard(module) {
+  extrasState.pinValues[module.id] = extrasState.pinValues[module.id] || Object.fromEntries(module.inputs.map(input => [input.name, input.default]));
+  extrasState.stepIndex[module.id] = extrasState.stepIndex[module.id] || 0;
+  return `<article class="module-card" data-module="${escapeHtml(module.id)}">
+    <button class="module-toggle" type="button" aria-expanded="false">
+      <span class="module-toggle-text"><h3>${escapeHtml(module.title)}</h3><p>${escapeHtml(module.summary)}</p></span>
+      <span class="module-chev" aria-hidden="true">⌄</span>
+    </button>
+    <div class="module-body" hidden>
+      <span class="module-signature">${escapeHtml(module.signature)}</span>
+      <h4 class="module-subhead">Interactive diagram</h4>
+      <div class="pin-diagram" data-pin-diagram></div>
+      <h4 class="module-subhead">Circuit diagram</h4>
+      <figure class="circuit-figure"><img src="${encodeURI(module.circuit.image)}" alt="${escapeHtml(module.title)} circuit diagram" loading="lazy" /><figcaption>${escapeHtml(module.circuit.caption)}</figcaption></figure>
+      <h4 class="module-subhead">Verilog code</h4>
+      <div class="code-block">
+        <div class="code-block-head"><span>${escapeHtml(module.id)}.v</span><button class="code-copy" type="button" data-copy>Copy</button></div>
+        <pre><code>${highlightVerilog(module.code)}</code></pre>
+      </div>
+      <h4 class="module-subhead">Building the code, step by step</h4>
+      <div class="slide-widget" data-slide-widget></div>
+    </div>
+  </article>`;
+}
+
+function wireModuleInteractions(labs) {
+  const panelsEl = $('[data-materials-panels]');
+  if (panelsEl.dataset.wired) return;
+  panelsEl.dataset.wired = 'true';
+  panelsEl.addEventListener('click', event => {
+    const moduleCard = event.target.closest('[data-module]');
+    if (!moduleCard) return;
+    const module = findModule(labs, moduleCard.dataset.module);
+
+    const toggle = event.target.closest('.module-toggle');
+    if (toggle) {
+      const body = moduleCard.querySelector('.module-body');
+      const wasExpanded = toggle.getAttribute('aria-expanded') === 'true';
+      toggle.setAttribute('aria-expanded', String(!wasExpanded));
+      body.hidden = wasExpanded;
+      if (!wasExpanded && !body.dataset.rendered) {
+        body.querySelector('[data-pin-diagram]').innerHTML = renderPinDiagram(module);
+        body.querySelector('[data-slide-widget]').innerHTML = renderSlideWidget(module);
+        body.dataset.rendered = 'true';
+      }
+      return;
+    }
+
+    const pinButton = event.target.closest('.pin-toggle');
+    if (pinButton) {
+      const values = extrasState.pinValues[module.id];
+      const bit = pinButton.dataset.pinBit;
+      values[bit] = values[bit] ? 0 : 1;
+      moduleCard.querySelector('[data-pin-diagram]').innerHTML = renderPinDiagram(module);
+      return;
+    }
+
+    const copyButton = event.target.closest('[data-copy]');
+    if (copyButton) {
+      (navigator.clipboard?.writeText(module.code) ?? Promise.reject()).then(() => {
+        copyButton.textContent = 'Copied';
+        copyButton.dataset.copied = 'true';
+        setTimeout(() => { copyButton.textContent = 'Copy'; delete copyButton.dataset.copied; }, 1500);
+      }).catch(() => {
+        copyButton.textContent = 'Copy failed — select manually';
+        setTimeout(() => { copyButton.textContent = 'Copy'; }, 1500);
+      });
+      return;
+    }
+
+    const prevButton = event.target.closest('[data-slide-prev]');
+    const nextButton = event.target.closest('[data-slide-next]');
+    if (prevButton || nextButton) {
+      const steps = module.steps || [];
+      const idx = extrasState.stepIndex[module.id] || 0;
+      extrasState.stepIndex[module.id] = prevButton ? Math.max(0, idx - 1) : Math.min(steps.length - 1, idx + 1);
+      moduleCard.querySelector('[data-slide-widget]').innerHTML = renderSlideWidget(module);
+    }
+  });
+}
+
+function renderExtras(data) {
+  const labs = data.labs || [];
+  const tabsEl = $('[data-materials-tabs]');
+  const panelsEl = $('[data-materials-panels]');
+  if (!labs.length) {
+    tabsEl.innerHTML = '';
+    panelsEl.innerHTML = '<div class="empty-state">Extra materials will appear here as they are added.</div>';
+    return;
+  }
+  extrasState.activeLab = extrasState.activeLab ?? labs[0].lab;
+  tabsEl.innerHTML = labs.map(lab => `<button class="materials-tab" type="button" role="tab" data-lab-tab="${lab.lab}" aria-selected="${lab.lab === extrasState.activeLab}">${escapeHtml(lab.label)}</button>`).join('');
+  panelsEl.innerHTML = labs.map(lab => `<div class="materials-panel" data-lab-panel="${lab.lab}" ${lab.lab === extrasState.activeLab ? '' : 'hidden'}>${(lab.modules || []).map(renderModuleCard).join('') || '<div class="empty-state">No modules published for this lab yet.</div>'}</div>`).join('');
+
+  $$('[data-lab-tab]').forEach(tab => tab.addEventListener('click', () => {
+    extrasState.activeLab = Number(tab.dataset.labTab);
+    $$('[data-lab-tab]').forEach(t => t.setAttribute('aria-selected', String(t === tab)));
+    $$('[data-lab-panel]').forEach(panel => { panel.hidden = Number(panel.dataset.labPanel) !== extrasState.activeLab; });
+  }));
+
+  wireModuleInteractions(labs);
+}
+
 async function refreshLiveBoard() {
   const board = $('[data-live-board]');
   const status = $('[data-live-status]');
@@ -58,6 +291,9 @@ $$('[data-nav] a').forEach(link => link.addEventListener('click', () => { $('[da
 fetch('data/content.json', { cache: 'no-store' }).then(response => { if (!response.ok) throw new Error('Content unavailable'); return response.json(); }).then(render).catch(() => {
   $('[data-labs]').innerHTML = '<div class="empty-state">Course content is temporarily unavailable. Please refresh the page.</div>';
   $('[data-announcements]').innerHTML = '<div class="empty-state">Announcements are temporarily unavailable.</div>';
+});
+fetch('data/modules.json', { cache: 'no-store' }).then(response => { if (!response.ok) throw new Error('Modules unavailable'); return response.json(); }).then(renderExtras).catch(() => {
+  $('[data-materials-panels]').innerHTML = '<div class="empty-state">Extra materials are temporarily unavailable.</div>';
 });
 refreshLiveBoard();
 setInterval(refreshLiveBoard, 60_000);

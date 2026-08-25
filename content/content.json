@@ -12,7 +12,7 @@
   "hero": {
     "eyebrow": "P4 + P7 · First Semester 2026–2027",
     "heading": "Computer Architecture Lab",
-    "intro": "The official course page for lab sheets, announcements, schedules, and resources shared during class."
+    "intro": "The course page for lab sheets, announcements, schedules, and resources shared during class."
   },
   "quickLinks": [
     { "label": "Lab sheets", "target": "#lab-sheets" },
@@ -35,7 +35,7 @@
     {
       "id": "welcome-2026",
       "title": "Welcome to CS F342 Lab",
-      "body": "This portal is the official home for P4 and P7 lab material. Bookmark it and check the latest notice before each session.",
+      "body": "This portal is the home for P4 and P7 lab material. Bookmark it and check the latest notice before each session.",
       "date": "2026-08-18",
       "audience": "P4 & P7",
       "level": "important",
@@ -64,13 +64,13 @@
     },
     {
       "number": 2,
-      "title": "Lab sheet 2",
-      "summary": "Details will be published after Lab 1.",
+      "title": "Combinational Circuit Modeling",
+      "summary": "Gate-level 4x1 multiplexer, a hierarchical 16x1 multiplexer built from it, and a decoder-based full adder.",
       "sections": ["P4", "P7"],
-      "file": "",
-      "fileSize": "",
-      "releaseAt": "2026-09-01T08:00:00+05:30",
-      "visibility": "scheduled"
+      "file": "lab-02-combinational-circuits.pdf",
+      "fileSize": "242 KB",
+      "releaseAt": "2026-08-20T00:00:00+05:30",
+      "visibility": "public"
     }
   ],
   "schedule": [
@@ -106,5 +106,5 @@
       "strict": false
     }
   ],
-  "updatedAt": "2026-08-18"
+  "updatedAt": "2026-08-20"
 }

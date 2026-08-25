@@ -3,9 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Official student portal for CS F342 Computer Architecture Lab, sections P4 and P7." />
+    <meta name="description" content="Student portal for CS F342 Computer Architecture Lab, sections P4 and P7." />
     <meta name="theme-color" content="#ffffff" />
     <title>CS F342 · Computer Architecture Lab</title>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="CS F342 · Computer Architecture Lab" />
+    <meta property="og:description" content="Student portal for CS F342 Computer Architecture Lab, sections P4 and P7 — lab sheets, announcements, and schedules." />
+    <meta property="og:url" content="https://au-svt.github.io/ca-lab-2026f/" />
+    <meta name="twitter:card" content="summary" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2318324a'/%3E%3Ctext x='32' y='42' font-family='Georgia,serif' font-size='30' font-weight='700' fill='%23fff' text-anchor='middle'%3ECA%3C/text%3E%3C/svg%3E" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet" />
@@ -13,13 +19,14 @@
     <script src="assets/app.js" defer></script>
   </head>
   <body>
+    <div class="accent-ribbon" aria-hidden="true"></div>
     <a class="skip-link" href="#main">Skip to main content</a>
     <header class="site-header">
       <div class="header-inner">
         <a class="brand" href="#top" aria-label="CS F342 homepage"><span class="brand-code">CS F342</span><span class="brand-name">Computer Architecture Lab</span></a>
         <button class="menu-button" type="button" aria-expanded="false" aria-controls="site-nav" data-menu-button><span class="sr-only">Open navigation</span><i></i><i></i><i></i></button>
         <nav id="site-nav" class="site-nav" aria-label="Main navigation" data-nav>
-          <a href="#live">Additional resources</a><a href="#announcements">Announcements</a><a href="#lab-sheets">Lab sheets</a><a href="#schedule">Schedule</a>
+          <a href="#live">Additional resources</a><a href="#announcements">Announcements</a><a href="#lab-sheets">Lab sheets</a><a href="#extras">Extra materials</a><a href="#schedule">Schedule</a><a href="#feedback">Feedback</a>
         </nav>
       </div>
     </header>
@@ -30,7 +37,7 @@
           <div class="hero-copy">
             <p class="term" data-hero-eyebrow>P4 &amp; P7 · First Semester 2026–2027</p>
             <h1>Computer<br />Architecture <span>Lab</span></h1>
-            <p class="hero-intro" data-hero-intro>The official course page for lab sheets, announcements, and session resources.</p>
+            <p class="hero-intro" data-hero-intro>The course page for lab sheets, announcements, and session resources.</p>
             <div class="hero-actions"><a class="button button-primary" href="#lab-sheets">Open lab sheets</a><a class="button button-secondary" href="#live">Additional resources</a></div>
           </div>
           <aside class="course-card" aria-label="Course details">
@@ -42,7 +49,7 @@
 
       <section class="notice-strip" aria-label="Course reminder"><div class="container"><strong>Before your lab:</strong><span>Check additional resources and open the latest lab sheet.</span></div></section>
 
-      <section class="section" id="live">
+      <section class="section accent-teal" id="live">
         <div class="container">
           <div class="section-heading"><div><span class="section-number">01</span><h2>Additional lab resources</h2></div><p>Live links, files, code, and instructions for the current lab. This area refreshes automatically.</p></div>
           <div class="live-board" data-live-board aria-live="polite" aria-busy="true"><div class="board-loading"><span class="status-dot"></span>Checking for live updates…</div></div>
@@ -50,14 +57,14 @@
         </div>
       </section>
 
-      <section class="section section-soft" id="announcements">
+      <section class="section section-soft accent-amber" id="announcements">
         <div class="container">
           <div class="section-heading"><div><span class="section-number">02</span><h2>Announcements</h2></div><p>Official course updates and reminders for P4 and P7.</p></div>
           <div class="announcement-list" data-announcements><div class="empty-state">Loading announcements…</div></div>
         </div>
       </section>
 
-      <section class="section" id="lab-sheets">
+      <section class="section accent-blue" id="lab-sheets">
         <div class="container">
           <div class="section-heading"><div><span class="section-number">03</span><h2>Lab sheets</h2></div><p>All released course PDFs are available to both P4 and P7. View them online or download a copy.</p></div>
           <div class="resource-list" data-resources></div>
@@ -65,18 +72,40 @@
         </div>
       </section>
 
-      <section class="section section-soft" id="schedule">
+      <section class="section section-soft accent-copper" id="extras">
         <div class="container">
-          <div class="section-heading"><div><span class="section-number">04</span><h2>Weekly schedule</h2></div><p>Attend the assigned section. Any temporary change will be posted above.</p></div>
+          <div class="section-heading"><div><span class="section-number">04</span><h2>Extra materials</h2></div><p>Interactive diagrams, circuits, and annotated code for select modules from each lab.</p></div>
+          <div class="materials-tabs" data-materials-tabs role="tablist" aria-label="Lab"></div>
+          <div class="materials-panels" data-materials-panels><div class="empty-state">Loading extra materials…</div></div>
+        </div>
+      </section>
+
+      <section class="section accent-violet" id="schedule">
+        <div class="container">
+          <div class="section-heading"><div><span class="section-number">05</span><h2>Weekly schedule</h2></div><p>Attend the assigned section. Any temporary change will be posted above.</p></div>
           <div class="schedule-grid" data-schedule></div>
         </div>
       </section>
 
-      <section class="section" id="guidelines">
-        <div class="container"><div class="section-heading"><div><span class="section-number">05</span><h2>Lab guidelines</h2></div></div><div class="policy-grid" data-policies></div></div>
+      <section class="section accent-slate" id="guidelines">
+        <div class="container"><div class="section-heading"><div><span class="section-number">06</span><h2>Lab guidelines</h2></div></div><div class="policy-grid" data-policies></div></div>
+      </section>
+
+      <section class="section section-soft accent-emerald" id="feedback">
+        <div class="container">
+          <div class="section-heading"><div><span class="section-number">07</span><h2>Feedback &amp; queries</h2></div><p>Report an issue, ask a question, or suggest an improvement. Responses are reviewed by the lab instructor.</p></div>
+          <div class="feedback-panel">
+            <div class="feedback-icon" aria-hidden="true">✉</div>
+            <div class="feedback-copy">
+              <h3>Have a question, issue, or suggestion?</h3>
+              <p>Opens in a new tab. Sign in with your BITS Pilani account to submit — you can send up to 10 queries this semester; email the instructor if you need more.</p>
+            </div>
+            <a class="button button-primary" href="https://docs.google.com/forms/d/e/1FAIpQLSc_zppjz11JvbCsoTLzc68xmzctMVyqRVdOA7n5AY0yawC00A/viewform" target="_blank" rel="noopener">Open feedback form ↗</a>
+          </div>
+        </div>
       </section>
     </main>
 
-    <footer><div class="container footer-inner"><div><strong>CS F342</strong><span>Computer Architecture Lab</span></div><p>P4 &amp; P7 · First Semester 2026–2027</p><p>Updated <span data-updated>—</span></p></div></footer>
+    <footer><div class="accent-ribbon" aria-hidden="true"></div><div class="container footer-inner"><div><strong>CS F342</strong><span>Computer Architecture Lab</span></div><p>P4 &amp; P7 · First Semester 2026–2027</p><p>Updated <span data-updated>—</span></p></div></footer>
   </body>
 </html>
