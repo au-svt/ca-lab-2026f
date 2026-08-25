@@ -1,4 +1,4 @@
-const state = { content: null };
+const state = { content: null, modules: null };
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const escapeHtml = (value = '') => String(value).replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
@@ -7,15 +7,6 @@ function formatDate(value, withTime = false) {
   if (!value) return 'Date pending';
   const date = value.includes('T') ? new Date(value) : new Date(`${value}T12:00:00+05:30`);
   return new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric', ...(withTime ? { hour: '2-digit', minute: '2-digit' } : {}), timeZone: 'Asia/Kolkata' }).format(date);
-}
-
-function renderLabs() {
-  const labs = state.content.labs;
-  $('[data-labs]').innerHTML = labs.length ? labs.map(lab => {
-    const available = Boolean(lab.file && lab.available);
-    const actions = available ? `<div class="file-actions"><a class="button button-secondary" href="${encodeURI(lab.file)}" target="_blank" rel="noopener">View PDF ↗</a><a class="button button-primary" href="${encodeURI(lab.file)}" download>Download</a></div>` : '<span class="download" aria-disabled="true">Not released</span>';
-    return `<article class="lab-row"><div class="lab-number">${String(lab.number).padStart(2, '0')}</div><div class="lab-copy"><h3>${escapeHtml(lab.title)}</h3><p>${escapeHtml(lab.summary)}</p>${lab.fileSize ? `<span class="file-size">PDF · ${escapeHtml(lab.fileSize)}</span>` : ''}</div>${actions}</article>`;
-  }).join('') : '<div class="empty-state">No lab sheets have been released.</div>';
 }
 
 function render(content) {
@@ -28,7 +19,7 @@ function render(content) {
   $('[data-instructor-email]').href = `mailto:${content.course.email}`;
   $('[data-updated]').textContent = formatDate(content.updatedAt);
   $('[data-resources]').innerHTML = (content.resources || []).map(item => `<article class="resource-card"><div class="resource-icon" aria-hidden="true">PDF</div><div><span class="resource-label">COURSE RESOURCE</span><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.summary)}</p>${item.fileSize ? `<span class="file-size">PDF · ${escapeHtml(item.fileSize)}</span>` : ''}</div>${item.available ? `<div class="file-actions"><a class="button button-secondary" href="${encodeURI(item.file)}" target="_blank" rel="noopener">View PDF ↗</a><a class="button button-primary" href="${encodeURI(item.file)}" download>Download</a></div>` : '<span class="download" aria-disabled="true">Not available</span>'}</article>`).join('');
-  renderLabs();
+  maybeRenderLabTabs();
   $('[data-announcements]').innerHTML = content.announcements.map(item => `<article class="announcement ${escapeHtml(item.level)}"><time class="announcement-date" datetime="${escapeHtml(item.date)}">${formatDate(item.date)}</time><div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.body)}</p></div><span class="audience">${escapeHtml(item.audience)}</span></article>`).join('') || '<div class="empty-state">No announcements right now.</div>';
   $('[data-schedule]').innerHTML = content.schedule.map(item => `<article class="schedule-card"><h3>Section ${escapeHtml(item.section)}</h3><div class="schedule-details"><div><span>DAY & TIME</span><strong>${escapeHtml(item.day)} · ${escapeHtml(item.time)}</strong></div><div><span>ROOM</span><strong>${escapeHtml(item.venue)}</strong></div><div><span>LAB INSTRUCTOR</span><strong>${escapeHtml(content.course.instructor)}</strong></div><div class="wide"><span>TEACHING ASSISTANTS</span><strong>${(item.tas || []).map(escapeHtml).join(' · ')}</strong></div></div></article>`).join('');
   $('[data-policies]').innerHTML = content.policies.map(item => `<article class="policy${item.strict ? ' strict' : ''}"><span class="policy-level">${item.strict ? 'STRICT RULE' : 'GUIDELINE'}</span><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.text)}</p></article>`).join('');
@@ -126,10 +117,11 @@ const STEP_DIAGRAMS = {
   'mux4to1-gate': muxDiagramSvg
 };
 
-const extrasState = { pinValues: {}, stepIndex: {}, activeLab: null };
+const moduleState = { pinValues: {}, stepIndex: {} };
+const labTabState = { activeLab: null };
 
-function findModule(labs, id) {
-  for (const lab of labs) {
+function findModule(moduleLabs, id) {
+  for (const lab of moduleLabs) {
     const found = (lab.modules || []).find(module => module.id === id);
     if (found) return found;
   }
@@ -137,7 +129,7 @@ function findModule(labs, id) {
 }
 
 function renderPinDiagram(module) {
-  const values = extrasState.pinValues[module.id];
+  const values = moduleState.pinValues[module.id];
   const simulate = SIMULATORS[module.simulate];
   const outputs = simulate ? simulate(values) : {};
   const boxLabel = (module.signature.match(/module\s+(\w+)/) || [, module.title])[1];
@@ -154,7 +146,7 @@ function renderPinDiagram(module) {
 
 function renderSlideWidget(module) {
   const steps = module.steps || [];
-  const idx = extrasState.stepIndex[module.id] || 0;
+  const idx = moduleState.stepIndex[module.id] || 0;
   const step = steps[idx];
   if (!step) return '<p class="empty-state">No step-by-step walkthrough yet.</p>';
   const diagramFn = STEP_DIAGRAMS[module.simulate];
@@ -165,8 +157,8 @@ function renderSlideWidget(module) {
 }
 
 function renderModuleCard(module) {
-  extrasState.pinValues[module.id] = extrasState.pinValues[module.id] || Object.fromEntries(module.inputs.map(input => [input.name, input.default]));
-  extrasState.stepIndex[module.id] = extrasState.stepIndex[module.id] || 0;
+  moduleState.pinValues[module.id] = moduleState.pinValues[module.id] || Object.fromEntries(module.inputs.map(input => [input.name, input.default]));
+  moduleState.stepIndex[module.id] = moduleState.stepIndex[module.id] || 0;
   return `<article class="module-card" data-module="${escapeHtml(module.id)}">
     <button class="module-toggle" type="button" aria-expanded="false">
       <span class="module-toggle-text"><h3>${escapeHtml(module.title)}</h3><p>${escapeHtml(module.summary)}</p></span>
@@ -189,14 +181,14 @@ function renderModuleCard(module) {
   </article>`;
 }
 
-function wireModuleInteractions(labs) {
-  const panelsEl = $('[data-materials-panels]');
+function wireModuleInteractions(moduleLabs) {
+  const panelsEl = $('[data-lab-panels]');
   if (panelsEl.dataset.wired) return;
   panelsEl.dataset.wired = 'true';
   panelsEl.addEventListener('click', event => {
     const moduleCard = event.target.closest('[data-module]');
     if (!moduleCard) return;
-    const module = findModule(labs, moduleCard.dataset.module);
+    const module = findModule(moduleLabs, moduleCard.dataset.module);
 
     const toggle = event.target.closest('.module-toggle');
     if (toggle) {
@@ -214,7 +206,7 @@ function wireModuleInteractions(labs) {
 
     const pinButton = event.target.closest('.pin-toggle');
     if (pinButton) {
-      const values = extrasState.pinValues[module.id];
+      const values = moduleState.pinValues[module.id];
       const bit = pinButton.dataset.pinBit;
       values[bit] = values[bit] ? 0 : 1;
       moduleCard.querySelector('[data-pin-diagram]').innerHTML = renderPinDiagram(module);
@@ -238,33 +230,56 @@ function wireModuleInteractions(labs) {
     const nextButton = event.target.closest('[data-slide-next]');
     if (prevButton || nextButton) {
       const steps = module.steps || [];
-      const idx = extrasState.stepIndex[module.id] || 0;
-      extrasState.stepIndex[module.id] = prevButton ? Math.max(0, idx - 1) : Math.min(steps.length - 1, idx + 1);
+      const idx = moduleState.stepIndex[module.id] || 0;
+      moduleState.stepIndex[module.id] = prevButton ? Math.max(0, idx - 1) : Math.min(steps.length - 1, idx + 1);
       moduleCard.querySelector('[data-slide-widget]').innerHTML = renderSlideWidget(module);
     }
   });
 }
 
-function renderExtras(data) {
-  const labs = data.labs || [];
-  const tabsEl = $('[data-materials-tabs]');
-  const panelsEl = $('[data-materials-panels]');
+function findModulesForLab(moduleLabs, labNumber) {
+  const entry = moduleLabs.find(lab => lab.lab === labNumber);
+  return entry ? entry.modules || [] : [];
+}
+
+// Each tab is a self-contained view: a lab's own sheet row, followed only by
+// that lab's extra materials — nothing from any other lab.
+function renderLabPanel(lab, modules) {
+  const available = Boolean(lab.file && lab.available);
+  const actions = available ? `<div class="file-actions"><a class="button button-secondary" href="${encodeURI(lab.file)}" target="_blank" rel="noopener">View PDF ↗</a><a class="button button-primary" href="${encodeURI(lab.file)}" download>Download</a></div>` : '<span class="download" aria-disabled="true">Not released</span>';
+  const sheet = `<article class="lab-row"><div class="lab-number">${String(lab.number).padStart(2, '0')}</div><div class="lab-copy"><h3>${escapeHtml(lab.title)}</h3><p>${escapeHtml(lab.summary)}</p>${lab.fileSize ? `<span class="file-size">PDF · ${escapeHtml(lab.fileSize)}</span>` : ''}</div>${actions}</article>`;
+  const modulesHtml = modules.length ? modules.map(renderModuleCard).join('') : '<div class="empty-state">No extra materials for this lab yet.</div>';
+  return `${sheet}<h3 class="lab-panel-subhead">Extra materials</h3>${modulesHtml}`;
+}
+
+function renderLabTabs() {
+  const labs = state.content.labs;
+  const moduleLabs = state.modules.labs || [];
+  const tabsEl = $('[data-lab-tabs]');
+  const panelsEl = $('[data-lab-panels]');
   if (!labs.length) {
     tabsEl.innerHTML = '';
-    panelsEl.innerHTML = '<div class="empty-state">Extra materials will appear here as they are added.</div>';
+    panelsEl.innerHTML = '<div class="empty-state">No lab sheets have been released.</div>';
     return;
   }
-  extrasState.activeLab = extrasState.activeLab ?? labs[0].lab;
-  tabsEl.innerHTML = labs.map(lab => `<button class="materials-tab" type="button" role="tab" data-lab-tab="${lab.lab}" aria-selected="${lab.lab === extrasState.activeLab}">${escapeHtml(lab.label)}</button>`).join('');
-  panelsEl.innerHTML = labs.map(lab => `<div class="materials-panel" data-lab-panel="${lab.lab}" ${lab.lab === extrasState.activeLab ? '' : 'hidden'}>${(lab.modules || []).map(renderModuleCard).join('') || '<div class="empty-state">No modules published for this lab yet.</div>'}</div>`).join('');
+  labTabState.activeLab = labTabState.activeLab ?? labs[0].number;
+  tabsEl.innerHTML = labs.map(lab => `<button class="lab-tab" type="button" role="tab" data-lab-tab="${lab.number}" aria-selected="${lab.number === labTabState.activeLab}">Lab ${lab.number}</button>`).join('');
+  panelsEl.innerHTML = labs.map(lab => `<div class="lab-panel" data-lab-panel="${lab.number}" ${lab.number === labTabState.activeLab ? '' : 'hidden'}>${renderLabPanel(lab, findModulesForLab(moduleLabs, lab.number))}</div>`).join('');
 
   $$('[data-lab-tab]').forEach(tab => tab.addEventListener('click', () => {
-    extrasState.activeLab = Number(tab.dataset.labTab);
+    labTabState.activeLab = Number(tab.dataset.labTab);
     $$('[data-lab-tab]').forEach(t => t.setAttribute('aria-selected', String(t === tab)));
-    $$('[data-lab-panel]').forEach(panel => { panel.hidden = Number(panel.dataset.labPanel) !== extrasState.activeLab; });
+    $$('[data-lab-panel]').forEach(panel => { panel.hidden = Number(panel.dataset.labPanel) !== labTabState.activeLab; });
   }));
 
-  wireModuleInteractions(labs);
+  wireModuleInteractions(moduleLabs);
+}
+
+// content.json and modules.json load independently; only render once both are in,
+// regardless of which fetch resolves first.
+function maybeRenderLabTabs() {
+  if (!state.content || !state.modules) return;
+  renderLabTabs();
 }
 
 async function refreshLiveBoard() {
@@ -289,11 +304,14 @@ menuButton.addEventListener('click', () => { const open = $('[data-nav]').classL
 $$('[data-nav] a').forEach(link => link.addEventListener('click', () => { $('[data-nav]').classList.remove('open'); menuButton.setAttribute('aria-expanded', 'false'); }));
 
 fetch('data/content.json', { cache: 'no-store' }).then(response => { if (!response.ok) throw new Error('Content unavailable'); return response.json(); }).then(render).catch(() => {
-  $('[data-labs]').innerHTML = '<div class="empty-state">Course content is temporarily unavailable. Please refresh the page.</div>';
+  $('[data-lab-panels]').innerHTML = '<div class="empty-state">Course content is temporarily unavailable. Please refresh the page.</div>';
   $('[data-announcements]').innerHTML = '<div class="empty-state">Announcements are temporarily unavailable.</div>';
 });
-fetch('data/modules.json', { cache: 'no-store' }).then(response => { if (!response.ok) throw new Error('Modules unavailable'); return response.json(); }).then(renderExtras).catch(() => {
-  $('[data-materials-panels]').innerHTML = '<div class="empty-state">Extra materials are temporarily unavailable.</div>';
+// A failed modules.json fetch degrades to "no extra materials" rather than blanking
+// out the lab sheets that content.json already rendered successfully.
+fetch('data/modules.json', { cache: 'no-store' }).then(response => { if (!response.ok) throw new Error('Modules unavailable'); return response.json(); }).catch(() => ({ labs: [] })).then(data => {
+  state.modules = data;
+  maybeRenderLabTabs();
 });
 refreshLiveBoard();
 setInterval(refreshLiveBoard, 60_000);
