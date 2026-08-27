@@ -108,6 +108,33 @@ const SIMULATORS = {
       if (i === 3) c4 = next;
     }
     return { 'S[0]': S[0], 'S[1]': S[1], 'S[2]': S[2], 'S[3]': S[3], V: c3 ^ c4 };
+  },
+  'alu4': values => {
+    const A = [0, 1, 2, 3].map(i => values[`A[${i}]`]);
+    const B = [0, 1, 2, 3].map(i => values[`B[${i}]`]);
+    const op = (values['OP[1]'] << 1) | values['OP[0]'];
+    let Result = [0, 0, 0, 0], C = 0, V = 0;
+    if (op === 0 || op === 1) {
+      const Bx = op === 1 ? B.map(b => 1 - b) : B;
+      let carry = op === 1 ? 1 : 0, c3 = 0, c4 = 0;
+      for (let i = 0; i < 4; i++) {
+        const x = A[i], y = Bx[i], z = carry;
+        Result[i] = x ^ y ^ z;
+        const next = (x & y) | (x & z) | (y & z);
+        if (i === 2) c3 = next;
+        carry = next;
+        if (i === 3) c4 = next;
+      }
+      C = c4;
+      V = c3 ^ c4;
+    } else if (op === 2) {
+      Result = A.map((a, i) => a & B[i]);
+    } else {
+      Result = A.map((a, i) => a ^ B[i]);
+    }
+    const Z = Result.every(b => b === 0) ? 1 : 0;
+    const N = Result[3];
+    return { 'Result[0]': Result[0], 'Result[1]': Result[1], 'Result[2]': Result[2], 'Result[3]': Result[3], C, V, Z, N };
   }
 };
 
@@ -115,7 +142,14 @@ const STEP_DIAGRAMS = {
   'mux4to1-gate': muxDiagramSvg
 };
 
-function groupBits(names) {
+// `descending`: bit-print order within each group. Ascending (default) matches
+// this course's `input [0:N]`-declared buses (e.g. mux's `sel`/`in` — bit 0 is
+// declared first, so it prints first, same as real Verilog's %b for that
+// declaration direction). Standard `[N:0]`-declared buses (e.g. ADDSUB's
+// A/B/S, where bit N-1 is the MSB/sign bit) need `descending: true` so the
+// diagram and legend print MSB-first, matching both Verilog %b semantics for
+// that declaration and how a student would actually read/construct a value.
+function groupBits(names, descending = false) {
   const groups = new Map();
   names.forEach(name => {
     const match = name.match(/^(.+)\[(\d+)\]$/);
@@ -127,7 +161,7 @@ function groupBits(names) {
   return [...groups.entries()].map(([base, members]) => ({
     base,
     width: members.length,
-    members: members.slice().sort((a, b) => a.index - b.index)
+    members: members.slice().sort((a, b) => descending ? b.index - a.index : a.index - b.index)
   }));
 }
 
@@ -207,9 +241,10 @@ function renderPinDiagram(module) {
     return `<div class="pin-item"><span class="pin-arrow" aria-hidden="true">→</span><span class="pin-readout" data-bit-value="${value}">${value}</span><span class="pin-name">${escapeHtml(output.name)}</span></div>`;
   }).join('');
 
+  const descending = module.bitOrder === 'desc';
   const legend = [
-    formatBusLegend(groupBits(module.inputs.map(i => i.name)), values),
-    formatBusLegend(groupBits(module.outputs.map(o => o.name)), outputs)
+    formatBusLegend(groupBits(module.inputs.map(i => i.name), descending), values),
+    formatBusLegend(groupBits(module.outputs.map(o => o.name), descending), outputs)
   ].filter(Boolean).join(' | ');
 
   return `<div class="pin-diagram-main">

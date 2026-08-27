@@ -117,25 +117,57 @@
           "summary": "4-bit add/subtract circuit built from FULLADDER blocks; M selects add (0) or subtract (1), V flags signed overflow (Lab Sheet 2, Exercise 3). Your task — no reference code shown; test your own against a real simulator below.",
           "signature": "module ADDSUB(S, V, A, B, M);",
           "simulate": "addsub",
+          "bitOrder": "desc",
           "inputs": [
-            { "name": "A[0]", "default": 0, "side": "left" },
-            { "name": "A[1]", "default": 0, "side": "left" },
-            { "name": "A[2]", "default": 0, "side": "left" },
             { "name": "A[3]", "default": 0, "side": "left" },
-            { "name": "B[0]", "default": 0, "side": "left" },
-            { "name": "B[1]", "default": 0, "side": "left" },
-            { "name": "B[2]", "default": 0, "side": "left" },
+            { "name": "A[2]", "default": 0, "side": "left" },
+            { "name": "A[1]", "default": 0, "side": "left" },
+            { "name": "A[0]", "default": 0, "side": "left" },
             { "name": "B[3]", "default": 0, "side": "left" },
+            { "name": "B[2]", "default": 0, "side": "left" },
+            { "name": "B[1]", "default": 0, "side": "left" },
+            { "name": "B[0]", "default": 0, "side": "left" },
             { "name": "M", "default": 0, "side": "bottom" }
           ],
           "outputs": [
-            { "name": "S[0]" },
-            { "name": "S[1]" },
-            { "name": "S[2]" },
             { "name": "S[3]" },
+            { "name": "S[2]" },
+            { "name": "S[1]" },
+            { "name": "S[0]" },
             { "name": "V" }
           ],
           "testbench": "module autograde_addsub;\nreg [3:0] A, B; reg M; wire [3:0] S; wire V; reg [3:0] expected_s; reg expected_v; integer passed; integer failed;\nADDSUB dut(S,V,A,B,M);\ntask check;\n  input integer id; input [3:0] testA; input [3:0] testB; input testM;\n  begin\n    A = testA; B = testB; M = testM;\n    expected_s = testA + (testB ^ {4{testM}}) + testM;\n    if(testM == 1'b0) expected_v = (~(testA[3] ^ testB[3])) & (expected_s[3] ^ testA[3]);\n    else expected_v = (testA[3] ^ testB[3]) & (expected_s[3] ^ testA[3]);\n    #1;\n    if((S === expected_s) && (V === expected_v)) begin\n      $display(\"TEST|ADDSUB|%0d|PASS\",id);\n      passed = passed + 1;\n    end else begin\n      $display(\"TEST|ADDSUB|%0d|FAIL|A=%b|B=%b|M=%b|expectedS=%b|expectedV=%b|gotS=%b|gotV=%b\",id,A,B,M,expected_s,expected_v,S,V);\n      failed = failed + 1;\n    end\n  end\nendtask\ninitial begin\n  passed = 0; failed = 0;\n  check(1,  4'b0000, 4'b0000, 1'b0);\n  check(2,  4'b0010, 4'b0011, 1'b0);\n  check(3,  4'b0101, 4'b0010, 1'b0);\n  check(4,  4'b0111, 4'b0001, 1'b0);\n  check(5,  4'b1000, 4'b1111, 1'b0);\n  check(6,  4'b1111, 4'b0001, 1'b0);\n  check(7,  4'b1101, 4'b0010, 1'b0);\n  check(8,  4'b1000, 4'b0111, 1'b0);\n  check(9,  4'b0101, 4'b0011, 1'b1);\n  check(10, 4'b0011, 4'b0101, 1'b1);\n  check(11, 4'b0000, 4'b0000, 1'b1);\n  check(12, 4'b0111, 4'b1111, 1'b1);\n  check(13, 4'b1000, 4'b0001, 1'b1);\n  check(14, 4'b1000, 4'b1111, 1'b1);\n  check(15, 4'b1111, 4'b0111, 1'b1);\n  check(16, 4'b0110, 4'b0010, 1'b1);\n  if(failed == 0) $display(\"RESULT|ADDSUB|PASS|%0d/16\",passed);\n  else $display(\"RESULT|ADDSUB|FAIL|%0d/16\",passed);\n  $finish;\nend\nendmodule"
+        },
+        {
+          "id": "alu4",
+          "title": "4-bit Mini ALU",
+          "summary": "Additional exercise: a 4-bit ALU selecting add/sub/AND/XOR via a 2-bit OP code, with carry, overflow, zero, and negative flags. Your task — no reference code shown; test your own against a real simulator below.",
+          "signature": "module ALU4(Result, C, V, Z, N, A, B, OP);",
+          "simulate": "alu4",
+          "bitOrder": "desc",
+          "inputs": [
+            { "name": "A[3]", "default": 0, "side": "left" },
+            { "name": "A[2]", "default": 0, "side": "left" },
+            { "name": "A[1]", "default": 0, "side": "left" },
+            { "name": "A[0]", "default": 1, "side": "left" },
+            { "name": "B[3]", "default": 0, "side": "left" },
+            { "name": "B[2]", "default": 0, "side": "left" },
+            { "name": "B[1]", "default": 0, "side": "left" },
+            { "name": "B[0]", "default": 0, "side": "left" },
+            { "name": "OP[1]", "default": 0, "side": "bottom" },
+            { "name": "OP[0]", "default": 0, "side": "bottom" }
+          ],
+          "outputs": [
+            { "name": "Result[3]" },
+            { "name": "Result[2]" },
+            { "name": "Result[1]" },
+            { "name": "Result[0]" },
+            { "name": "C" },
+            { "name": "V" },
+            { "name": "Z" },
+            { "name": "N" }
+          ],
+          "testbench": "module autograde_alu4;\nreg [3:0] A, B; reg [1:0] OP;\nwire [3:0] Result; wire C, V, Z, N;\nreg [3:0] expected_result; reg expected_c, expected_v;\ninteger passed, failed;\nALU4 dut(Result, C, V, Z, N, A, B, OP);\n\ntask check;\n  input integer id; input [3:0] testA; input [3:0] testB; input [1:0] testOp; input checkCV;\n  reg [4:0] addRes;\n  begin\n    A = testA; B = testB; OP = testOp;\n    case (testOp)\n      2'b00: begin addRes = testA + testB; expected_result = addRes[3:0]; expected_c = addRes[4];\n                    expected_v = (~(testA[3]^testB[3])) & (expected_result[3]^testA[3]); end\n      2'b01: begin addRes = testA + (~testB & 4'hF) + 1'b1; expected_result = addRes[3:0]; expected_c = addRes[4];\n                    expected_v = (testA[3]^testB[3]) & (expected_result[3]^testA[3]); end\n      2'b10: begin expected_result = testA & testB; expected_c = 1'bx; expected_v = 1'bx; end\n      2'b11: begin expected_result = testA ^ testB; expected_c = 1'bx; expected_v = 1'bx; end\n    endcase\n    #1;\n    if (Result !== expected_result) begin\n      $display(\"TEST|ALU4|%0d|FAIL|Result mismatch: A=%b B=%b OP=%b expected=%b got=%b\", id,A,B,OP,expected_result,Result);\n      failed = failed + 1;\n    end else if (Z !== (expected_result == 4'b0000)) begin\n      $display(\"TEST|ALU4|%0d|FAIL|Z flag wrong: expected=%b got=%b\", id, (expected_result==4'b0000), Z);\n      failed = failed + 1;\n    end else if (N !== expected_result[3]) begin\n      $display(\"TEST|ALU4|%0d|FAIL|N flag wrong: expected=%b got=%b\", id, expected_result[3], N);\n      failed = failed + 1;\n    end else if (checkCV && (C !== expected_c || V !== expected_v)) begin\n      $display(\"TEST|ALU4|%0d|FAIL|C/V wrong: expectedC=%b expectedV=%b gotC=%b gotV=%b\", id,expected_c,expected_v,C,V);\n      failed = failed + 1;\n    end else begin\n      $display(\"TEST|ALU4|%0d|PASS\", id);\n      passed = passed + 1;\n    end\n  end\nendtask\n\ninitial begin\n  passed = 0; failed = 0;\n  check(1, 4'd3, 4'd2, 2'b00, 1);\n  check(2, 4'd7, 4'd1, 2'b00, 1);\n  check(3, 4'hF, 4'h1, 2'b00, 1);\n  check(4, 4'd5, 4'd3, 2'b01, 1);\n  check(5, 4'd0, 4'd1, 2'b01, 1);\n  check(6, 4'b1000, 4'b0001, 2'b01, 1);\n  check(7, 4'd5, 4'd3, 2'b10, 0);\n  check(8, 4'd0, 4'd7, 2'b10, 0);\n  check(9, 4'd5, 4'd3, 2'b11, 0);\n  check(10, 4'd5, 4'd5, 2'b11, 0);\n  check(11, 4'd3, 4'd5, 2'b01, 1);\n\n  if (failed == 0) $display(\"RESULT|ALU4|PASS|%0d/11\", passed);\n  else $display(\"RESULT|ALU4|FAIL|%0d/11\", passed);\n  $finish;\nend\nendmodule"
         }
       ]
     }
