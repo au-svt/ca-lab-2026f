@@ -175,6 +175,21 @@ h2 { margin:0; color:var(--navy-dark); font:700 clamp(36px,5vw,50px)/1.1 var(--s
 .module-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start; }
 .module-grid > div > .module-subhead:first-child { margin-top:0; }
 
+/* Question statement — instructor-authored prose for exercises not already in a PDF */
+.module-statement { padding:20px 22px; background:white; border:1px solid var(--line); border-radius:10px; font-size:14px; line-height:1.65; }
+.module-statement > *:first-child { margin-top:0; }
+.module-statement > *:last-child { margin-bottom:0; }
+.module-statement p { margin:0 0 14px; color:var(--ink); }
+.module-statement code { padding:1px 5px; color:var(--accent,var(--brand)); background:var(--accent-tint,var(--brand-tint)); border-radius:4px; font:13px var(--mono); }
+.module-statement ul { margin:0 0 14px; padding-left:22px; }
+.module-statement li { margin-bottom:6px; color:var(--ink); }
+.module-statement pre { margin:0 0 14px; padding:14px 16px; overflow-x:auto; background:var(--code-bg); border-radius:8px; }
+.module-statement pre code { padding:0; color:#e3ebf2; background:none; font-size:13px; line-height:1.6; white-space:pre; }
+.statement-table { width:100%; margin:0 0 14px; border-collapse:collapse; font-size:13px; }
+.statement-table th,.statement-table td { padding:8px 12px; text-align:left; border:1px solid var(--line); }
+.statement-table th { color:var(--muted); background:var(--soft); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+.statement-table td:first-child { color:var(--accent,var(--brand)); font-family:var(--mono); font-weight:600; }
+
 /* Interactive pin diagram — box with labeled, editable arrow-pins (left/bottom in, right out) */
 .pin-diagram { padding:28px 20px; background:white; border:1px solid var(--line); border-radius:10px; }
 .pin-diagram-main { display:grid; grid-template-columns:auto auto auto; grid-template-rows:auto; align-items:center; justify-content:center; gap:0 22px; }

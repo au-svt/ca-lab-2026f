@@ -288,6 +288,10 @@ function renderModuleCard(module) {
       </div>
       <h4 class="module-subhead">Building the code, step by step</h4>
       <div class="slide-widget" data-slide-widget></div>` : '';
+  // module.statement is instructor-authored HTML (trusted, same as code/testbench),
+  // inserted as-is rather than escaped — it's the full question text for exercises
+  // that aren't already in a published lab-sheet PDF.
+  const statementPane = module.statement ? `<h4 class="module-subhead">Question</h4><div class="module-statement">${module.statement}</div>` : '';
 
   return `<article class="module-card" data-module="${escapeHtml(module.id)}">
     <button class="module-toggle" type="button" aria-expanded="false">
@@ -296,6 +300,7 @@ function renderModuleCard(module) {
     </button>
     <div class="module-body" hidden>
       <span class="module-signature">${escapeHtml(module.signature)}</span>
+      ${statementPane}
       ${gridPane}
       ${codePane}
       <h4 class="module-subhead">Playground</h4>
