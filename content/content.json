@@ -71,6 +71,16 @@
       "fileSize": "242 KB",
       "releaseAt": "2026-08-20T00:00:00+05:30",
       "visibility": "public"
+    },
+    {
+      "number": 3,
+      "title": "Sequential Circuit Modeling",
+      "summary": "D flip-flops, blocking vs. non-blocking assignment, a Mealy-machine FSM example, and a 4-bit shift register.",
+      "sections": ["P4", "P7"],
+      "file": "lab-03-sequential-circuits.pdf",
+      "fileSize": "408 KB",
+      "releaseAt": "2026-09-01T00:00:00+05:30",
+      "visibility": "public"
     }
   ],
   "schedule": [
@@ -106,5 +116,5 @@
       "strict": false
     }
   ],
-  "updatedAt": "2026-08-20"
+  "updatedAt": "2026-09-01"
 }
