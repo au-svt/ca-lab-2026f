@@ -227,6 +227,98 @@
             "testbench": "module tb;\nreg d, clear, clock;\nwire q;\ndff_async_clear_high u(.d(d), .clear(clear), .clock(clock), .q(q));\ninitial begin $dumpfile(\"dump.vcd\"); $dumpvars(0, tb); end\ninitial begin clock = 0; forever #5 clock = ~clock; end\ninitial begin\n  clear = 0; d = 0;\n  #2 d = 1;\n  #16 clear = 1;\n  #10 begin clear = 0; d = 1; end\n  #14 $finish;\nend\nendmodule",
             "signals": [{"label":"d","width":1,"segments":[{"time":0,"value":"0","endTime":2},{"time":2,"value":"1","endTime":42}]},{"label":"clock","width":1,"segments":[{"time":0,"value":"0","endTime":5},{"time":5,"value":"1","endTime":10},{"time":10,"value":"0","endTime":15},{"time":15,"value":"1","endTime":20},{"time":20,"value":"0","endTime":25},{"time":25,"value":"1","endTime":30},{"time":30,"value":"0","endTime":35},{"time":35,"value":"1","endTime":40},{"time":40,"value":"0","endTime":42}]},{"label":"clear","width":1,"segments":[{"time":0,"value":"0","endTime":18},{"time":18,"value":"1","endTime":28},{"time":28,"value":"0","endTime":42}]},{"label":"q","width":1,"segments":[{"time":0,"value":"x","endTime":5},{"time":5,"value":"1","endTime":18},{"time":18,"value":"0","endTime":35},{"time":35,"value":"1","endTime":42}]}]
           }
+        },
+        {
+          "id": "nonblocking-assignment",
+          "title": "Non-blocking Assignment (<=) — a real 3-stage pipeline",
+          "summary": "A chain of three registers, in -> q1 -> q2 -> out, each stage updated with <=. Compare with the Blocking Assignment card below — same in/clk stimulus, dramatically different timing.",
+          "signature": "module nonblocking(in, clk, out);",
+          "code": "module nonblocking(in, clk, out);\ninput in, clk;\noutput out;\nreg q1, q2, out;\nalways @ (posedge clk) begin\n  q1 <= in;\n  q2 <= q1;\n  out <= q2;\nend\nendmodule",
+          "waveform": {
+            "maxTime": 70,
+            "note": "With <=, every right-hand side is read using the value each register held BEFORE this clock edge — all three reads happen first, then all three writes land together. So a new value of in takes exactly one clock edge to reach q1, one more to reach q2, one more to reach out: a genuine 3-stage pipeline. Watch in rise at t=3 — out only follows 3 edges later, at t=25.",
+            "testbench": "module tb;\nreg in, clk;\nwire out;\nnonblocking dut(.in(in), .clk(clk), .out(out));\ninitial begin $dumpfile(\"dump.vcd\"); $dumpvars(0, tb); end\ninitial begin clk = 0; forever #5 clk = ~clk; end\ninitial begin\n  in = 0;\n  #3 in = 1;\n  #30 in = 0;\n  #35 $finish;\nend\nendmodule",
+            "signals": [{"label":"in","width":1,"segments":[{"time":0,"value":"0","endTime":3},{"time":3,"value":"1","endTime":33},{"time":33,"value":"0","endTime":70}]},{"label":"clk","width":1,"segments":[{"time":0,"value":"0","endTime":5},{"time":5,"value":"1","endTime":10},{"time":10,"value":"0","endTime":15},{"time":15,"value":"1","endTime":20},{"time":20,"value":"0","endTime":25},{"time":25,"value":"1","endTime":30},{"time":30,"value":"0","endTime":35},{"time":35,"value":"1","endTime":40},{"time":40,"value":"0","endTime":45},{"time":45,"value":"1","endTime":50},{"time":50,"value":"0","endTime":55},{"time":55,"value":"1","endTime":60},{"time":60,"value":"0","endTime":65},{"time":65,"value":"1","endTime":70}]},{"label":"q1","width":1,"segments":[{"time":0,"value":"x","endTime":5},{"time":5,"value":"1","endTime":35},{"time":35,"value":"0","endTime":70}]},{"label":"q2","width":1,"segments":[{"time":0,"value":"x","endTime":15},{"time":15,"value":"1","endTime":45},{"time":45,"value":"0","endTime":70}]},{"label":"out","width":1,"segments":[{"time":0,"value":"x","endTime":25},{"time":25,"value":"1","endTime":55},{"time":55,"value":"0","endTime":70}]}]
+          }
+        },
+        {
+          "id": "blocking-assignment",
+          "title": "Blocking Assignment (=) — the pipeline collapses",
+          "summary": "The exact same three statements, in -> q1 -> q2 -> out, but with = instead of <=. Same in/clk stimulus as the Non-blocking card above — watch how differently out behaves.",
+          "signature": "module blocking(in, clk, out);",
+          "code": "module blocking(in, clk, out);\ninput in, clk;\noutput out;\nreg q1, q2, out;\nalways @ (posedge clk) begin\n  q1 = in;\n  q2 = q1;\n  out = q2;\nend\nendmodule",
+          "waveform": {
+            "maxTime": 70,
+            "note": "With =, each statement takes effect immediately, so the very next line reads the value that was just written. q1 = in updates q1 right away; q2 = q1 then reads that brand-new q1; out = q2 then reads that brand-new q2 — all three registers snap to in's value within the same clock edge, same simulation instant. The intended 3-stage shift register has collapsed into something that just mirrors in, one edge late. This is why non-blocking (<=) is the rule for clocked always blocks: blocking (=) here silently destroys the pipeline structure without any error or warning.",
+            "testbench": "module tb;\nreg in, clk;\nwire out;\nblocking dut(.in(in), .clk(clk), .out(out));\ninitial begin $dumpfile(\"dump.vcd\"); $dumpvars(0, tb); end\ninitial begin clk = 0; forever #5 clk = ~clk; end\ninitial begin\n  in = 0;\n  #3 in = 1;\n  #30 in = 0;\n  #35 $finish;\nend\nendmodule",
+            "signals": [{"label":"in","width":1,"segments":[{"time":0,"value":"0","endTime":3},{"time":3,"value":"1","endTime":33},{"time":33,"value":"0","endTime":70}]},{"label":"clk","width":1,"segments":[{"time":0,"value":"0","endTime":5},{"time":5,"value":"1","endTime":10},{"time":10,"value":"0","endTime":15},{"time":15,"value":"1","endTime":20},{"time":20,"value":"0","endTime":25},{"time":25,"value":"1","endTime":30},{"time":30,"value":"0","endTime":35},{"time":35,"value":"1","endTime":40},{"time":40,"value":"0","endTime":45},{"time":45,"value":"1","endTime":50},{"time":50,"value":"0","endTime":55},{"time":55,"value":"1","endTime":60},{"time":60,"value":"0","endTime":65},{"time":65,"value":"1","endTime":70}]},{"label":"q1","width":1,"segments":[{"time":0,"value":"x","endTime":5},{"time":5,"value":"1","endTime":35},{"time":35,"value":"0","endTime":70}]},{"label":"q2","width":1,"segments":[{"time":0,"value":"x","endTime":5},{"time":5,"value":"1","endTime":35},{"time":35,"value":"0","endTime":70}]},{"label":"out","width":1,"segments":[{"time":0,"value":"x","endTime":5},{"time":5,"value":"1","endTime":35},{"time":35,"value":"0","endTime":70}]}]
+          }
+        },
+        {
+          "id": "clock-generation",
+          "title": "Generating a Clock in Verilog",
+          "summary": "A testbench has no physical oscillator — you write a small always/forever block that flips a reg on a fixed delay. Three equivalent idioms, shown below.",
+          "statement": "<p>All three of these produce the identical clock waveform above — pick whichever reads clearest in your testbench.</p>\n<div class=\"code-block\"><div class=\"code-block-head\"><span>1. forever + toggle (what the lab sheet uses)</span></div><pre><code>initial begin\n  clk = 0;\n  forever #5 clk = ~clk;\nend</code></pre></div>\n<div class=\"code-block\"><div class=\"code-block-head\"><span>2. always block (no forever needed — always already repeats)</span></div><pre><code>initial clk = 0;\nalways #5 clk = ~clk;</code></pre></div>\n<div class=\"code-block\"><div class=\"code-block-head\"><span>3. parameterized period (change one number to change speed)</span></div><pre><code>parameter PERIOD = 10;\ninitial clk = 0;\nalways #(PERIOD/2) clk = ~clk;</code></pre></div>\n<p>All three run forever, so your testbench needs its own <code>$finish</code> (usually after some fixed delay, or after a loop of N clock edges) — otherwise the simulation never ends.</p>",
+          "signature": "initial begin clk = 0; forever #5 clk = ~clk; end",
+          "code": "module clock_demo(clk);\noutput reg clk;\ninitial begin\n  clk = 0;\n  forever #5 clk = ~clk;\nend\nendmodule",
+          "waveform": {
+            "maxTime": 43,
+            "note": "clk starts at 0, then flips every 5 time units forever, giving a period of 10 and a 50% duty cycle — the exact idiom the Lab 3 sheet uses in its own DFF testbench.",
+            "testbench": "module tb;\nwire clk;\nclock_demo u(.clk(clk));\ninitial begin $dumpfile(\"dump.vcd\"); $dumpvars(0, tb); end\ninitial #45 $finish;\nendmodule",
+            "signals": [{"label":"clk","width":1,"segments":[{"time":0,"value":"0","endTime":5},{"time":5,"value":"1","endTime":10},{"time":10,"value":"0","endTime":15},{"time":15,"value":"1","endTime":20},{"time":20,"value":"0","endTime":25},{"time":25,"value":"1","endTime":30},{"time":30,"value":"0","endTime":35},{"time":35,"value":"1","endTime":40},{"time":40,"value":"0","endTime":43}]}]
+          }
+        },
+        {
+          "id": "sequential-block-timing",
+          "title": "Sequential Block (begin ... end) — delays add up",
+          "summary": "Statements inside begin/end run one after another. Each #delay is measured from when the PREVIOUS statement finished, so the delays accumulate.",
+          "signature": "initial begin #5 a=1; #10 b=0; #15 c=1; end",
+          "code": "module sequential_timing;\nreg a, b, c;\ninitial begin\n  #5  a = 1'b1;\n  #10 b = 1'b0;\n  #15 c = 1'b1;\nend\nendmodule",
+          "waveform": {
+            "maxTime": 35,
+            "note": "a changes at t=5 (5). b changes at t=5+10=15 (not t=10!). c changes at t=15+15=30. Each delay counts from where the previous line left off — that's what \"sequential\" means here.",
+            "testbench": "module tb;\nreg a, b, c;\nsequential_timing u();\ninitial begin $dumpfile(\"dump.vcd\"); $dumpvars(0, tb); end\ninitial #35 $finish;\nendmodule",
+            "signals": [{"label":"a","width":1,"segments":[{"time":0,"value":"x","endTime":5},{"time":5,"value":"1","endTime":35}]},{"label":"b","width":1,"segments":[{"time":0,"value":"x","endTime":15},{"time":15,"value":"0","endTime":35}]},{"label":"c","width":1,"segments":[{"time":0,"value":"x","endTime":30},{"time":30,"value":"1","endTime":35}]}]
+          }
+        },
+        {
+          "id": "parallel-block-timing",
+          "title": "Parallel Block (fork ... join) — delays race from the same start line",
+          "summary": "Same three statements, same three delays as the Sequential Block card above — but inside fork/join every #delay is measured from the moment the fork started, not from the previous statement.",
+          "signature": "initial fork #5 a=1; #10 b=0; #15 c=1; join",
+          "code": "module parallel_timing;\nreg a, b, c;\ninitial fork\n  #5  a = 1'b1;\n  #10 b = 1'b0;\n  #15 c = 1'b1;\njoin\nendmodule",
+          "waveform": {
+            "maxTime": 20,
+            "note": "a changes at t=5, b at t=10, c at t=15 — all measured from t=0, running side by side. Compare with the Sequential Block card: same numbers, but b lands at t=10 here vs t=15 there, and c lands at t=15 here vs t=30 there. fork/join finishes as soon as its LAST branch completes (t=15), not one accumulated total.",
+            "testbench": "module tb;\nreg a, b, c;\nparallel_timing u();\ninitial begin $dumpfile(\"dump.vcd\"); $dumpvars(0, tb); end\ninitial #20 $finish;\nendmodule",
+            "signals": [{"label":"a","width":1,"segments":[{"time":0,"value":"x","endTime":5},{"time":5,"value":"1","endTime":20}]},{"label":"b","width":1,"segments":[{"time":0,"value":"x","endTime":10},{"time":10,"value":"0","endTime":20}]},{"label":"c","width":1,"segments":[{"time":0,"value":"x","endTime":15},{"time":15,"value":"1","endTime":20}]}]
+          }
+        },
+        {
+          "id": "mealy-fsm",
+          "title": "Mealy Machine FSM",
+          "summary": "A 3-state Mealy machine (as given in the lab sheet): output depends on both the current state AND the current input, so outp can change the instant inp does — not just on clock edges.",
+          "signature": "module mealy(clk, rst, inp, outp);",
+          "code": "module mealy(clk, rst, inp, outp);\ninput clk, rst, inp;\noutput outp;\nreg [1:0] state;\nreg outp;\n\nalways @ (posedge clk, posedge rst) begin\n  if (rst) begin\n    state <= 2'b00;\n    outp <= 0;\n  end else begin\n    case (state)\n      2'b00: if (inp) begin state <= 2'b01; outp <= 0; end\n             else      begin state <= 2'b10; outp <= 0; end\n      2'b01: if (inp) begin state <= 2'b00; outp <= 1; end\n             else      begin state <= 2'b10; outp <= 0; end\n      2'b10: if (inp) begin state <= 2'b01; outp <= 0; end\n             else      begin state <= 2'b00; outp <= 1; end\n      default: begin state <= 2'b00; outp <= 0; end\n    endcase\n  end\nend\nendmodule",
+          "waveform": {
+            "maxTime": 70,
+            "note": "state is registered (updates only on posedge clk or posedge rst) but outp is assigned combinationally within that same case — so watch how state visibly steps through 00 -> 01/10 -> ... on each clock edge, feeding the fixed test sequence 0101_0111_0111_0010 (LSB first) one bit per edge. This is the lab sheet's own deterministic test loop — the $random-based extra loop from the sheet is left out here so the trace is reproducible.",
+            "testbench": "module tb;\nreg clk, rst, inp;\nwire outp;\nreg [15:0] sequence;\ninteger i;\n\nmealy duty(.clk(clk), .rst(rst), .inp(inp), .outp(outp));\n\ninitial begin $dumpfile(\"dump.vcd\"); $dumpvars(0, tb); end\ninitial begin\n  clk = 0;\n  rst = 1;\n  sequence = 16'b0101_0111_0111_0010;\n  #5 rst = 0;\n  for (i = 0; i <= 15; i = i + 1) begin\n    inp = sequence[i];\n    #2 clk = 1;\n    #2 clk = 0;\n  end\n  $finish;\nend\nendmodule",
+            "signals": [{"label":"clk","width":1,"segments":[{"time":0,"value":"0","endTime":7},{"time":7,"value":"1","endTime":9},{"time":9,"value":"0","endTime":11},{"time":11,"value":"1","endTime":13},{"time":13,"value":"0","endTime":15},{"time":15,"value":"1","endTime":17},{"time":17,"value":"0","endTime":19},{"time":19,"value":"1","endTime":21},{"time":21,"value":"0","endTime":23},{"time":23,"value":"1","endTime":25},{"time":25,"value":"0","endTime":27},{"time":27,"value":"1","endTime":29},{"time":29,"value":"0","endTime":31},{"time":31,"value":"1","endTime":33},{"time":33,"value":"0","endTime":35},{"time":35,"value":"1","endTime":37},{"time":37,"value":"0","endTime":39},{"time":39,"value":"1","endTime":41},{"time":41,"value":"0","endTime":43},{"time":43,"value":"1","endTime":45},{"time":45,"value":"0","endTime":47},{"time":47,"value":"1","endTime":49},{"time":49,"value":"0","endTime":51},{"time":51,"value":"1","endTime":53},{"time":53,"value":"0","endTime":55},{"time":55,"value":"1","endTime":57},{"time":57,"value":"0","endTime":59},{"time":59,"value":"1","endTime":61},{"time":61,"value":"0","endTime":63},{"time":63,"value":"1","endTime":65},{"time":65,"value":"0","endTime":67},{"time":67,"value":"1","endTime":69},{"time":69,"value":"0","endTime":70}]},{"label":"rst","width":1,"segments":[{"time":0,"value":"1","endTime":5},{"time":5,"value":"0","endTime":70}]},{"label":"inp","width":1,"segments":[{"time":0,"value":"x","endTime":5},{"time":5,"value":"0","endTime":9},{"time":9,"value":"1","endTime":13},{"time":13,"value":"0","endTime":21},{"time":21,"value":"1","endTime":33},{"time":33,"value":"0","endTime":37},{"time":37,"value":"1","endTime":49},{"time":49,"value":"0","endTime":53},{"time":53,"value":"1","endTime":57},{"time":57,"value":"0","endTime":61},{"time":61,"value":"1","endTime":65},{"time":65,"value":"0","endTime":70}]},{"label":"state","width":2,"segments":[{"time":0,"value":"0","endTime":7},{"time":7,"value":"10","endTime":11},{"time":11,"value":"1","endTime":15},{"time":15,"value":"10","endTime":19},{"time":19,"value":"0","endTime":23},{"time":23,"value":"1","endTime":27},{"time":27,"value":"0","endTime":31},{"time":31,"value":"1","endTime":35},{"time":35,"value":"10","endTime":39},{"time":39,"value":"1","endTime":43},{"time":43,"value":"0","endTime":47},{"time":47,"value":"1","endTime":51},{"time":51,"value":"10","endTime":55},{"time":55,"value":"1","endTime":59},{"time":59,"value":"10","endTime":63},{"time":63,"value":"1","endTime":67},{"time":67,"value":"10","endTime":70}]},{"label":"outp","width":1,"segments":[{"time":0,"value":"0","endTime":19},{"time":19,"value":"1","endTime":23},{"time":23,"value":"0","endTime":27},{"time":27,"value":"1","endTime":31},{"time":31,"value":"0","endTime":43},{"time":43,"value":"1","endTime":47},{"time":47,"value":"0","endTime":70}]}]
+          }
+        },
+        {
+          "id": "shift-register-4bit",
+          "title": "4-bit Shift Register",
+          "summary": "A 4-bit right shift register (as given in the lab sheet): on every clock edge, when EN=1, in is shifted into the top bit and every other bit slides one position down; the bottom bit is dropped.",
+          "signature": "module shiftreg(EN, in, CLK, Q);",
+          "code": "module shiftreg(EN, in, CLK, Q);\nparameter n = 4;\ninput EN;\ninput in;\ninput CLK;\noutput [n-1:0] Q;\nreg [n-1:0] Q;\n\ninitial Q = 4'd10;\nalways @ (posedge CLK) begin\n  if (EN) Q = {in, Q[n-1:1]};\nend\nendmodule",
+          "waveform": {
+            "maxTime": 17,
+            "note": "Q starts at 4'd10 = 4'b1010. While EN=1, each posedge sets Q to {in, Q[3:1]} — in becomes the new bit 3, and the old bit 0 falls off the end. While EN=0, Q holds. Note this always block uses = (blocking) rather than <= — with only one statement per edge here that's harmless, but see the Blocking vs. Non-blocking cards above for why that stops being true the moment a second statement is added.",
+            "testbench": "module tb;\nparameter n = 4;\nreg EN, in, CLK;\nwire [n-1:0] Q;\n\nshiftreg shreg(.EN(EN), .in(in), .CLK(CLK), .Q(Q));\n\ninitial begin $dumpfile(\"dump.vcd\"); $dumpvars(0, tb); end\ninitial CLK = 0;\nalways #2 CLK = ~CLK;\ninitial begin\n  in = 0; EN = 0;\n  #4 in = 1; EN = 1;\n  #4 in = 1; EN = 0;\n  #4 in = 0; EN = 1;\n  #5 $finish;\nend\nendmodule",
+            "signals": [{"label":"EN","width":1,"segments":[{"time":0,"value":"0","endTime":4},{"time":4,"value":"1","endTime":8},{"time":8,"value":"0","endTime":12},{"time":12,"value":"1","endTime":17}]},{"label":"in","width":1,"segments":[{"time":0,"value":"0","endTime":4},{"time":4,"value":"1","endTime":12},{"time":12,"value":"0","endTime":17}]},{"label":"CLK","width":1,"segments":[{"time":0,"value":"0","endTime":2},{"time":2,"value":"1","endTime":4},{"time":4,"value":"0","endTime":6},{"time":6,"value":"1","endTime":8},{"time":8,"value":"0","endTime":10},{"time":10,"value":"1","endTime":12},{"time":12,"value":"0","endTime":14},{"time":14,"value":"1","endTime":16},{"time":16,"value":"0","endTime":17}]},{"label":"Q","width":4,"segments":[{"time":0,"value":"1010","endTime":6},{"time":6,"value":"1101","endTime":14},{"time":14,"value":"110","endTime":17}]}]
+          }
         }
       ]
     }

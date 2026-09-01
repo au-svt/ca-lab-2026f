@@ -185,6 +185,7 @@ h2 { margin:0; color:var(--navy-dark); font:700 clamp(36px,5vw,50px)/1.1 var(--s
 .module-statement li { margin-bottom:6px; color:var(--ink); }
 .module-statement pre { margin:0 0 14px; padding:14px 16px; overflow-x:auto; background:var(--code-bg); border-radius:8px; }
 .module-statement pre code { padding:0; color:#e3ebf2; background:none; font-size:13px; line-height:1.6; white-space:pre; }
+.module-statement .code-block { margin:0 0 14px; }
 .statement-table { width:100%; margin:0 0 14px; border-collapse:collapse; font-size:13px; }
 .statement-table th,.statement-table td { padding:8px 12px; text-align:left; border:1px solid var(--line); }
 .statement-table th { color:var(--muted); background:var(--soft); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }

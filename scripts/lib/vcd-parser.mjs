@@ -74,6 +74,7 @@ export function signalTimeline(parsed, path, endTime) {
   const segments = [];
   let last = null;
   for (const c of changes) {
+    if (c.time >= endTime) break; // outside the display window — the prior segment just runs to endTime
     if (last && last.time === c.time) { last.value = c.value; continue; } // same-time overwrite
     if (last) segments.push({ ...last, endTime: c.time });
     last = { time: c.time, value: c.value };
