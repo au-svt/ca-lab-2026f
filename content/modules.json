@@ -171,6 +171,64 @@
           "testbench": "module autograde_alu4;\nreg [3:0] A, B; reg [1:0] OP;\nwire [3:0] Result; wire C, V, Z, N;\nreg [3:0] expected_result; reg expected_c, expected_v;\ninteger passed, failed;\nALU4 dut(Result, C, V, Z, N, A, B, OP);\n\ntask check;\n  input integer id; input [3:0] testA; input [3:0] testB; input [1:0] testOp; input checkCV;\n  reg [4:0] addRes;\n  begin\n    A = testA; B = testB; OP = testOp;\n    case (testOp)\n      2'b00: begin addRes = testA + testB; expected_result = addRes[3:0]; expected_c = addRes[4];\n                    expected_v = (~(testA[3]^testB[3])) & (expected_result[3]^testA[3]); end\n      2'b01: begin addRes = testA + (~testB & 4'hF) + 1'b1; expected_result = addRes[3:0]; expected_c = addRes[4];\n                    expected_v = (testA[3]^testB[3]) & (expected_result[3]^testA[3]); end\n      2'b10: begin expected_result = testA & testB; expected_c = 1'bx; expected_v = 1'bx; end\n      2'b11: begin expected_result = testA ^ testB; expected_c = 1'bx; expected_v = 1'bx; end\n    endcase\n    #1;\n    if (Result !== expected_result) begin\n      $display(\"TEST|ALU4|%0d|FAIL|Result mismatch: A=%b B=%b OP=%b expected=%b got=%b\", id,A,B,OP,expected_result,Result);\n      failed = failed + 1;\n    end else if (Z !== (expected_result == 4'b0000)) begin\n      $display(\"TEST|ALU4|%0d|FAIL|Z flag wrong: expected=%b got=%b\", id, (expected_result==4'b0000), Z);\n      failed = failed + 1;\n    end else if (N !== expected_result[3]) begin\n      $display(\"TEST|ALU4|%0d|FAIL|N flag wrong: expected=%b got=%b\", id, expected_result[3], N);\n      failed = failed + 1;\n    end else if (checkCV && (C !== expected_c || V !== expected_v)) begin\n      $display(\"TEST|ALU4|%0d|FAIL|C/V wrong: expectedC=%b expectedV=%b gotC=%b gotV=%b\", id,expected_c,expected_v,C,V);\n      failed = failed + 1;\n    end else begin\n      $display(\"TEST|ALU4|%0d|PASS\", id);\n      passed = passed + 1;\n    end\n  end\nendtask\n\ninitial begin\n  passed = 0; failed = 0;\n  check(1, 4'd3, 4'd2, 2'b00, 1);\n  check(2, 4'd7, 4'd1, 2'b00, 1);\n  check(3, 4'hF, 4'h1, 2'b00, 1);\n  check(4, 4'd5, 4'd3, 2'b01, 1);\n  check(5, 4'd0, 4'd1, 2'b01, 1);\n  check(6, 4'b1000, 4'b0001, 2'b01, 1);\n  check(7, 4'd5, 4'd3, 2'b10, 0);\n  check(8, 4'd0, 4'd7, 2'b10, 0);\n  check(9, 4'd5, 4'd3, 2'b11, 0);\n  check(10, 4'd5, 4'd5, 2'b11, 0);\n  check(11, 4'd3, 4'd5, 2'b01, 1);\n\n  if (failed == 0) $display(\"RESULT|ALU4|PASS|%0d/11\", passed);\n  else $display(\"RESULT|ALU4|FAIL|%0d/11\", passed);\n  $finish;\nend\nendmodule"
         }
       ]
+    },
+    {
+      "lab": 3,
+      "label": "Lab 3",
+      "modules": [
+        {
+          "id": "dff-sync-clear-low",
+          "title": "D Flip-Flop — Synchronous Clear (Active Low)",
+          "summary": "As given in the lab sheet (module dff_sync_clear). Clear only takes effect on the next clock edge, not the instant clearb goes low.",
+          "signature": "module dff_sync_clear_low(d, clearb, clock, q);",
+          "code": "module dff_sync_clear_low(d, clearb, clock, q);\ninput d, clearb, clock;\noutput q;\nreg q;\nalways @ (posedge clock) begin\n  if (!clearb) q <= 1'b0;\n  else q <= d;\nend\nendmodule",
+          "waveform": {
+            "maxTime": 42,
+            "note": "Watch clearb drop at t=18 — q doesn't react until the next rising clock edge at t=25. That's the defining trait of a synchronous clear: it's just another data input to the always block, sampled only at the clock edge like d is.",
+            "testbench": "module tb;\nreg d, clearb, clock;\nwire q;\ndff_sync_clear_low u(.d(d), .clearb(clearb), .clock(clock), .q(q));\ninitial begin $dumpfile(\"dump.vcd\"); $dumpvars(0, tb); end\ninitial begin clock = 0; forever #5 clock = ~clock; end\ninitial begin\n  clearb = 1; d = 0;\n  #2 d = 1;\n  #16 clearb = 0;\n  #10 begin clearb = 1; d = 1; end\n  #14 $finish;\nend\nendmodule",
+            "signals": [{"label":"d","width":1,"segments":[{"time":0,"endTime":2,"value":"0"},{"time":2,"endTime":42,"value":"1"}]},{"label":"clock","width":1,"segments":[{"time":0,"endTime":5,"value":"0"},{"time":5,"endTime":10,"value":"1"},{"time":10,"endTime":15,"value":"0"},{"time":15,"endTime":20,"value":"1"},{"time":20,"endTime":25,"value":"0"},{"time":25,"endTime":30,"value":"1"},{"time":30,"endTime":35,"value":"0"},{"time":35,"endTime":40,"value":"1"},{"time":40,"endTime":42,"value":"0"}]},{"label":"clearb","width":1,"segments":[{"time":0,"endTime":18,"value":"1"},{"time":18,"endTime":28,"value":"0"},{"time":28,"endTime":42,"value":"1"}]},{"label":"q","width":1,"segments":[{"time":0,"endTime":5,"value":"x"},{"time":5,"endTime":25,"value":"1"},{"time":25,"endTime":35,"value":"0"},{"time":35,"endTime":42,"value":"1"}]}]
+          }
+        },
+        {
+          "id": "dff-async-clear-low",
+          "title": "D Flip-Flop — Asynchronous Clear (Active Low)",
+          "summary": "As given in the lab sheet (module dff_async_clear). Clear reacts immediately, without waiting for a clock edge.",
+          "signature": "module dff_async_clear_low(d, clearb, clock, q);",
+          "code": "module dff_async_clear_low(d, clearb, clock, q);\ninput d, clearb, clock;\noutput q;\nreg q;\nalways @ (negedge clearb or posedge clock) begin\n  if (!clearb) q <= 1'b0;\n  else q <= d;\nend\nendmodule",
+          "waveform": {
+            "maxTime": 42,
+            "note": "Watch clearb drop at t=18 — q reacts immediately, no clock edge needed. Compare with the synchronous version above, which held q until t=25. That immediate reaction (clearb is in the always block's sensitivity list alongside the clock) is what makes a clear asynchronous.",
+            "testbench": "module tb;\nreg d, clearb, clock;\nwire q;\ndff_async_clear_low u(.d(d), .clearb(clearb), .clock(clock), .q(q));\ninitial begin $dumpfile(\"dump.vcd\"); $dumpvars(0, tb); end\ninitial begin clock = 0; forever #5 clock = ~clock; end\ninitial begin\n  clearb = 1; d = 0;\n  #2 d = 1;\n  #16 clearb = 0;\n  #10 begin clearb = 1; d = 1; end\n  #14 $finish;\nend\nendmodule",
+            "signals": [{"label":"d","width":1,"segments":[{"time":0,"value":"0","endTime":2},{"time":2,"value":"1","endTime":42}]},{"label":"clock","width":1,"segments":[{"time":0,"value":"0","endTime":5},{"time":5,"value":"1","endTime":10},{"time":10,"value":"0","endTime":15},{"time":15,"value":"1","endTime":20},{"time":20,"value":"0","endTime":25},{"time":25,"value":"1","endTime":30},{"time":30,"value":"0","endTime":35},{"time":35,"value":"1","endTime":40},{"time":40,"value":"0","endTime":42}]},{"label":"clearb","width":1,"segments":[{"time":0,"value":"1","endTime":18},{"time":18,"value":"0","endTime":28},{"time":28,"value":"1","endTime":42}]},{"label":"q","width":1,"segments":[{"time":0,"value":"x","endTime":5},{"time":5,"value":"1","endTime":18},{"time":18,"value":"0","endTime":35},{"time":35,"value":"1","endTime":42}]}]
+          }
+        },
+        {
+          "id": "dff-sync-clear-high",
+          "title": "D Flip-Flop — Synchronous Clear (Active High)",
+          "summary": "Same synchronous behavior as dff_sync_clear_low, but clear is asserted with a 1 instead of a 0 — a common source of confusion when reusing someone else's DFF module.",
+          "signature": "module dff_sync_clear_high(d, clear, clock, q);",
+          "code": "module dff_sync_clear_high(d, clear, clock, q);\ninput d, clear, clock;\noutput q;\nreg q;\nalways @ (posedge clock) begin\n  if (clear) q <= 1'b0;\n  else q <= d;\nend\nendmodule",
+          "waveform": {
+            "maxTime": 42,
+            "note": "Same q trace as the active-low synchronous version — only the meaning of the clear signal's value flips (asserted = 1 here, not 0). Sync vs. async is about the sensitivity list; active-high vs. active-low is just which value of clear means \"clear now\".",
+            "testbench": "module tb;\nreg d, clear, clock;\nwire q;\ndff_sync_clear_high u(.d(d), .clear(clear), .clock(clock), .q(q));\ninitial begin $dumpfile(\"dump.vcd\"); $dumpvars(0, tb); end\ninitial begin clock = 0; forever #5 clock = ~clock; end\ninitial begin\n  clear = 0; d = 0;\n  #2 d = 1;\n  #16 clear = 1;\n  #10 begin clear = 0; d = 1; end\n  #14 $finish;\nend\nendmodule",
+            "signals": [{"label":"d","width":1,"segments":[{"time":0,"value":"0","endTime":2},{"time":2,"value":"1","endTime":42}]},{"label":"clock","width":1,"segments":[{"time":0,"value":"0","endTime":5},{"time":5,"value":"1","endTime":10},{"time":10,"value":"0","endTime":15},{"time":15,"value":"1","endTime":20},{"time":20,"value":"0","endTime":25},{"time":25,"value":"1","endTime":30},{"time":30,"value":"0","endTime":35},{"time":35,"value":"1","endTime":40},{"time":40,"value":"0","endTime":42}]},{"label":"clear","width":1,"segments":[{"time":0,"value":"0","endTime":18},{"time":18,"value":"1","endTime":28},{"time":28,"value":"0","endTime":42}]},{"label":"q","width":1,"segments":[{"time":0,"value":"x","endTime":5},{"time":5,"value":"1","endTime":25},{"time":25,"value":"0","endTime":35},{"time":35,"value":"1","endTime":42}]}]
+          }
+        },
+        {
+          "id": "dff-async-clear-high",
+          "title": "D Flip-Flop — Asynchronous Clear (Active High)",
+          "summary": "Combines the two traits: reacts immediately (asynchronous) and is asserted by a 1 (active high).",
+          "signature": "module dff_async_clear_high(d, clear, clock, q);",
+          "code": "module dff_async_clear_high(d, clear, clock, q);\ninput d, clear, clock;\noutput q;\nreg q;\nalways @ (posedge clear or posedge clock) begin\n  if (clear) q <= 1'b0;\n  else q <= d;\nend\nendmodule",
+          "waveform": {
+            "maxTime": 42,
+            "note": "Immediate reaction like the other async version, but asserted by clear=1. Four variants, two independent choices — sync vs. async decides *when* the DFF checks clear; active-high vs. active-low decides *which value* of clear means clear.",
+            "testbench": "module tb;\nreg d, clear, clock;\nwire q;\ndff_async_clear_high u(.d(d), .clear(clear), .clock(clock), .q(q));\ninitial begin $dumpfile(\"dump.vcd\"); $dumpvars(0, tb); end\ninitial begin clock = 0; forever #5 clock = ~clock; end\ninitial begin\n  clear = 0; d = 0;\n  #2 d = 1;\n  #16 clear = 1;\n  #10 begin clear = 0; d = 1; end\n  #14 $finish;\nend\nendmodule",
+            "signals": [{"label":"d","width":1,"segments":[{"time":0,"value":"0","endTime":2},{"time":2,"value":"1","endTime":42}]},{"label":"clock","width":1,"segments":[{"time":0,"value":"0","endTime":5},{"time":5,"value":"1","endTime":10},{"time":10,"value":"0","endTime":15},{"time":15,"value":"1","endTime":20},{"time":20,"value":"0","endTime":25},{"time":25,"value":"1","endTime":30},{"time":30,"value":"0","endTime":35},{"time":35,"value":"1","endTime":40},{"time":40,"value":"0","endTime":42}]},{"label":"clear","width":1,"segments":[{"time":0,"value":"0","endTime":18},{"time":18,"value":"1","endTime":28},{"time":28,"value":"0","endTime":42}]},{"label":"q","width":1,"segments":[{"time":0,"value":"x","endTime":5},{"time":5,"value":"1","endTime":18},{"time":18,"value":"0","endTime":35},{"time":35,"value":"1","endTime":42}]}]
+          }
+        }
+      ]
     }
   ]
 }

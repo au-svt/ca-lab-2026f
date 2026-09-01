@@ -263,6 +263,18 @@ h2 { margin:0; color:var(--navy-dark); font:700 clamp(36px,5vw,50px)/1.1 var(--s
 .playground-case[data-pass="true"] .playground-case-mark { color:var(--emerald); }
 .playground-case[data-pass="false"] .playground-case-mark { color:#832338; }
 
+/* Waveform viewer — interactive timing diagram with a hover/click cursor */
+.waveform-widget { display:grid; gap:12px; }
+.waveform { display:grid; grid-template-columns:70px 1fr; gap:0; background:var(--code-bg); border-radius:10px; overflow:hidden; }
+.waveform-labels { display:flex; flex-direction:column; padding-top:22px; border-right:1px solid var(--code-line); }
+.waveform-labels > div { display:flex; height:40px; align-items:center; padding-left:12px; color:#9fb7cf; font:600 12px/1 var(--mono); }
+.waveform-canvas { padding:0 10px; cursor:crosshair; }
+.waveform-canvas svg { display:block; width:100%; height:auto; }
+.waveform-readout { margin:0; padding:10px 14px; color:var(--ink); background:var(--soft); border-radius:8px; font:12px/1.5 var(--mono); }
+.waveform-readout-time { color:var(--muted); }
+.waveform-controls { display:flex; }
+.waveform-note { margin:-4px 0 0; color:var(--muted); font-size:13px; line-height:1.6; }
+
 footer { color:#dce6ed; background:var(--navy-dark); }
 .footer-inner { width:min(1120px,calc(100% - 40px)); margin:auto; padding:34px 0; display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; align-items:center; font-size:12px; }
 .footer-inner > div { display:grid; }
@@ -309,6 +321,8 @@ footer { color:#dce6ed; background:var(--navy-dark); }
   .pin-side-left,.pin-side-right,.pin-side-bottom,.pin-box { grid-column:1; grid-row:auto; }
   .pin-box { order:-2; }
   .pin-side-left,.pin-side-right { order:-1; justify-items:center; }
+  .waveform { grid-template-columns:52px 1fr; }
+  .waveform-labels > div { padding-left:6px; font-size:11px; }
 
 }
 @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }

@@ -268,6 +268,141 @@ function renderSlideWidget(module) {
     <p class="slide-label">Step ${idx + 1} of ${steps.length} — ${escapeHtml(step.label)}</p>`;
 }
 
+// --- Waveform viewer: renders a PRE-COMPUTED timing diagram (module.waveform),
+// generated offline by actually running the real Verilog engine against a known
+// design+testbench and extracting the VCD — not re-simulated in the student's
+// browser, so viewing a worked example needs no WASM download. Interactive: hover
+// to scrub a cursor and read every signal's value at that instant (like GTKWave),
+// or click Play to auto-scan across the whole run.
+function formatVectorValue(bits, width) {
+  if (/[xz]/i.test(bits)) return bits.toUpperCase();
+  const padded = bits.padStart(width, '0');
+  return `0x${parseInt(padded, 2).toString(16)}`;
+}
+
+function niceTickStep(maxTime) {
+  const raw = maxTime / 8;
+  const pow = 10 ** Math.floor(Math.log10(raw || 1));
+  const norm = raw / pow;
+  const step = norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10;
+  return Math.max(1, step * pow);
+}
+
+function valueAtTime(segments, time) {
+  const seg = segments.find(s => time >= s.time && time < s.endTime) || segments[segments.length - 1];
+  return seg ? seg.value : '?';
+}
+
+function renderWaveformSvg(waveform) {
+  const { maxTime, signals } = waveform;
+  const width = 640, rowHeight = 40, axisHeight = 22;
+  const height = signals.length * rowHeight + axisHeight;
+  const xOf = t => (t / maxTime) * width;
+  const rows = [];
+
+  signals.forEach((sig, idx) => {
+    const rowTop = idx * rowHeight + axisHeight;
+    rows.push(`<line x1="0" y1="${rowTop + rowHeight}" x2="${width}" y2="${rowTop + rowHeight}" stroke="#24374f"/>`);
+    if (sig.width === 1) {
+      const highY = rowTop + 8, lowY = rowTop + rowHeight - 8;
+      let prevY = null;
+      sig.segments.forEach(seg => {
+        const x1 = xOf(seg.time), x2 = xOf(seg.endTime);
+        if (seg.value === 'x' || seg.value === 'z') {
+          const midY = rowTop + rowHeight / 2;
+          rows.push(`<rect x="${x1}" y="${rowTop + 6}" width="${Math.max(x2 - x1, 0)}" height="${rowHeight - 12}" fill="#7f92a6" opacity="0.25"/>`);
+          rows.push(`<line x1="${x1}" y1="${midY}" x2="${x2}" y2="${midY}" stroke="#9fb7cf" stroke-width="1.5" stroke-dasharray="3,2"/>`);
+          if (prevY !== null && prevY !== midY) rows.push(`<line x1="${x1}" y1="${prevY}" x2="${x1}" y2="${midY}" stroke="#4a6a8a" stroke-width="1.5"/>`);
+          prevY = midY;
+        } else {
+          const y = seg.value === '1' ? highY : lowY;
+          if (prevY !== null && prevY !== y) rows.push(`<line x1="${x1}" y1="${prevY}" x2="${x1}" y2="${y}" stroke="#4a6a8a" stroke-width="1.5"/>`);
+          rows.push(`<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="#4a6a8a" stroke-width="1.5"/>`);
+          prevY = y;
+        }
+      });
+    } else {
+      sig.segments.forEach(seg => {
+        const x1 = xOf(seg.time), x2 = xOf(seg.endTime);
+        const label = formatVectorValue(seg.value, sig.width);
+        rows.push(`<rect x="${x1 + 1}" y="${rowTop + 6}" width="${Math.max(x2 - x1 - 2, 0)}" height="${rowHeight - 12}" rx="3" fill="#16283d" stroke="#4a6a8a" stroke-width="1.5"/>`);
+        rows.push(`<text x="${(x1 + x2) / 2}" y="${rowTop + rowHeight / 2 + 4}" text-anchor="middle" font-family="SF Mono, Menlo, monospace" font-size="11" fill="#e3ebf2">${escapeHtml(label)}</text>`);
+      });
+    }
+  });
+
+  const tickStep = niceTickStep(maxTime);
+  const ticks = [];
+  for (let t = 0; t <= maxTime; t += tickStep) {
+    const x = xOf(t);
+    ticks.push(`<line x1="${x}" y1="${axisHeight - 4}" x2="${x}" y2="${height}" stroke="#1c2c40"/>`);
+    ticks.push(`<text x="${x + 3}" y="14" font-family="SF Mono, Menlo, monospace" font-size="9" fill="#7f92a6">${t}</text>`);
+  }
+
+  return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" data-waveform-svg preserveAspectRatio="none">
+    ${ticks.join('')}
+    ${rows.join('')}
+    <line data-waveform-cursor x1="0" y1="${axisHeight}" x2="0" y2="${height}" stroke="#e0a865" stroke-width="1.5" style="display:none" pointer-events="none"/>
+  </svg>`;
+}
+
+function renderWaveformReadout(waveform, time) {
+  const parts = waveform.signals.map(sig => {
+    const v = valueAtTime(sig.segments, time);
+    const shown = sig.width === 1 ? v : formatVectorValue(v, sig.width);
+    return `${escapeHtml(sig.label)}=${escapeHtml(shown)}`;
+  });
+  return `${parts.join('  ')}  <span class="waveform-readout-time">@ t=${time}</span>`;
+}
+
+function renderWaveform(module) {
+  const wf = module.waveform;
+  const labels = wf.signals.map(s => `<div class="waveform-label">${escapeHtml(s.label)}</div>`).join('');
+  return `<div class="waveform-widget" data-waveform-widget>
+    <div class="waveform" data-waveform data-max-time="${wf.maxTime}">
+      <div class="waveform-labels">${labels}</div>
+      <div class="waveform-canvas">${renderWaveformSvg(wf)}</div>
+    </div>
+    <p class="waveform-readout" data-waveform-readout>Hover over the waveform to inspect values at that instant.</p>
+    <div class="waveform-controls"><button class="button button-secondary" type="button" data-waveform-play>&#9654; Play</button></div>
+  </div>`;
+}
+
+function setWaveformCursor(widgetEl, module, time) {
+  const wf = module.waveform;
+  time = Math.max(0, Math.min(wf.maxTime, Math.round(time)));
+  const svgEl = widgetEl.querySelector('[data-waveform-svg]');
+  const cursorEl = widgetEl.querySelector('[data-waveform-cursor]');
+  const x = (time / wf.maxTime) * svgEl.viewBox.baseVal.width;
+  cursorEl.setAttribute('x1', x);
+  cursorEl.setAttribute('x2', x);
+  cursorEl.style.display = 'block';
+  widgetEl.querySelector('[data-waveform-readout]').innerHTML = renderWaveformReadout(wf, time);
+}
+
+function timeFromPointer(svgEl, maxTime, clientX) {
+  const rect = svgEl.getBoundingClientRect();
+  const frac = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+  return frac * maxTime;
+}
+
+function playWaveform(widgetEl, module) {
+  const button = widgetEl.querySelector('[data-waveform-play]');
+  if (button.disabled) return;
+  button.disabled = true;
+  const wf = module.waveform;
+  const durationMs = 3000;
+  const start = performance.now();
+  function frame(now) {
+    const elapsed = now - start;
+    const time = Math.min(wf.maxTime, (elapsed / durationMs) * wf.maxTime);
+    setWaveformCursor(widgetEl, module, time);
+    if (elapsed < durationMs) requestAnimationFrame(frame);
+    else button.disabled = false;
+  }
+  requestAnimationFrame(frame);
+}
+
 function renderModuleCard(module) {
   const hasDiagram = Array.isArray(module.inputs) && module.inputs.length > 0;
   if (hasDiagram) {
@@ -278,6 +413,11 @@ function renderModuleCard(module) {
   const diagramPane = hasDiagram ? `<div><h4 class="module-subhead">Interactive diagram</h4><div class="pin-diagram" data-pin-diagram></div></div>` : '';
   const circuitPane = module.circuit ? `<div><h4 class="module-subhead">Circuit diagram</h4><figure class="circuit-figure"><img src="${encodeURI(module.circuit.image)}" alt="${escapeHtml(module.title)} circuit diagram" loading="lazy" /><figcaption>${escapeHtml(module.circuit.caption)}</figcaption></figure></div>` : '';
   const gridPane = (diagramPane || circuitPane) ? `<div class="module-grid">${diagramPane}${circuitPane}</div>` : '';
+  const waveformPane = module.waveform ? `<h4 class="module-subhead">Waveform</h4>${renderWaveform(module)}${module.waveform.note ? `<p class="waveform-note">${module.waveform.note}</p>` : ''}${module.waveform.testbench ? `<h4 class="module-subhead">Testbench used for this waveform</h4>
+      <div class="code-block">
+        <div class="code-block-head"><span>testbench.v</span></div>
+        <pre><code>${highlightVerilog(module.waveform.testbench)}</code></pre>
+      </div>` : ''}` : '';
   // Modules the lab sheet hands out as a worked example show their reference code;
   // modules that are the student's assigned task (module.code absent) don't — only
   // the expected signature, diagram, and a Playground to self-check their own code.
@@ -286,8 +426,8 @@ function renderModuleCard(module) {
         <div class="code-block-head"><span>${escapeHtml(module.id)}.v</span><button class="code-copy" type="button" data-copy>Copy</button></div>
         <pre><code>${highlightVerilog(module.code)}</code></pre>
       </div>
-      <h4 class="module-subhead">Building the code, step by step</h4>
-      <div class="slide-widget" data-slide-widget></div>` : '';
+      ${module.steps && module.steps.length ? `<h4 class="module-subhead">Building the code, step by step</h4>
+      <div class="slide-widget" data-slide-widget></div>` : ''}` : '';
   // module.statement is instructor-authored HTML (trusted, same as code/testbench),
   // inserted as-is rather than escaped — it's the full question text for exercises
   // that aren't already in a published lab-sheet PDF.
@@ -302,8 +442,9 @@ function renderModuleCard(module) {
       <span class="module-signature">${escapeHtml(module.signature)}</span>
       ${statementPane}
       ${gridPane}
+      ${waveformPane}
       ${codePane}
-      <h4 class="module-subhead">Playground</h4>
+      ${module.testbench ? `<h4 class="module-subhead">Playground</h4>
       <div class="playground">
         <p class="playground-spec">${playgroundSpecHtml(module)}</p>
         <div class="playground-grid">
@@ -313,7 +454,7 @@ function renderModuleCard(module) {
           </div>
           <div class="playground-results" data-playground-results><div class="empty-state">Paste your code and click Run to see results.</div></div>
         </div>
-      </div>
+      </div>` : ''}
     </div>
   </article>`;
 }
@@ -374,7 +515,31 @@ function wireModuleInteractions(modules) {
       const resultsEl = moduleCard.querySelector('[data-playground-results]');
       runButton.disabled = true;
       runPlaygroundAndRender(module, code, resultsEl).finally(() => { runButton.disabled = false; });
+      return;
     }
+
+    const playButton = event.target.closest('[data-waveform-play]');
+    if (playButton) {
+      playWaveform(playButton.closest('[data-waveform-widget]'), module);
+      return;
+    }
+
+    const clickedSvg = event.target.closest('[data-waveform-svg]');
+    if (clickedSvg) {
+      const widgetEl = clickedSvg.closest('[data-waveform-widget]');
+      const time = timeFromPointer(clickedSvg, module.waveform.maxTime, event.clientX);
+      setWaveformCursor(widgetEl, module, time);
+    }
+  });
+
+  listEl.addEventListener('mousemove', event => {
+    const svgEl = event.target.closest('[data-waveform-svg]');
+    if (!svgEl) return;
+    const moduleCard = event.target.closest('[data-module]');
+    const module = findModule(modules, moduleCard.dataset.module);
+    const widgetEl = svgEl.closest('[data-waveform-widget]');
+    const time = timeFromPointer(svgEl, module.waveform.maxTime, event.clientX);
+    setWaveformCursor(widgetEl, module, time);
   });
 
   listEl.addEventListener('input', event => {
