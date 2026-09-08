@@ -81,6 +81,16 @@
       "fileSize": "408 KB",
       "releaseAt": "2026-09-01T00:00:00+05:30",
       "visibility": "public"
+    },
+    {
+      "number": 4,
+      "title": "MIPS ALU Design",
+      "summary": "A 32-bit MIPS ALU built from a 2:1 multiplexer, AND/OR gates, and a full adder, plus the Main Control PLA and ALU Control logic that decode instructions into control signals.",
+      "sections": ["P4", "P7"],
+      "file": "lab-04-alu-design.pdf",
+      "fileSize": "216 KB",
+      "releaseAt": "2026-09-08T00:00:00+05:30",
+      "visibility": "public"
     }
   ],
   "schedule": [
@@ -116,5 +126,5 @@
       "strict": false
     }
   ],
-  "updatedAt": "2026-09-01"
+  "updatedAt": "2026-09-08"
 }
