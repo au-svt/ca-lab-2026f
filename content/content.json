@@ -91,6 +91,16 @@
       "fileSize": "216 KB",
       "releaseAt": "2026-09-08T00:00:00+05:30",
       "visibility": "public"
+    },
+    {
+      "number": 5,
+      "title": "Register File Implementation",
+      "summary": "A 4-register, 32-bit-wide MIPS register file built from D flip-flops, two 4:1 read muxes, and a 2:4 write decoder, with clock gating to enable writes to just one register per cycle.",
+      "sections": ["P4", "P7"],
+      "file": "lab-05-register-file.pdf",
+      "fileSize": "192 KB",
+      "releaseAt": "2026-09-15T00:00:00+05:30",
+      "visibility": "public"
     }
   ],
   "schedule": [
@@ -126,5 +136,5 @@
       "strict": false
     }
   ],
-  "updatedAt": "2026-09-08"
+  "updatedAt": "2026-09-15"
 }
