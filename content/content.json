@@ -101,6 +101,16 @@
       "fileSize": "192 KB",
       "releaseAt": "2026-09-15T00:00:00+05:30",
       "visibility": "public"
+    },
+    {
+      "number": 6,
+      "title": "Single Cycle Datapath Design",
+      "summary": "Integrating the ALU, Control Unit, and Register File from previous labs — plus a Program Counter, Instruction Memory, Sign Extender, Shifter, and Data Memory — into a complete MIPS single-cycle datapath, tested first on R-format instructions.",
+      "sections": ["P4", "P7"],
+      "file": "lab-06-single-cycle-datapath.pdf",
+      "fileSize": "109 KB",
+      "releaseAt": "2026-09-22T00:00:00+05:30",
+      "visibility": "public"
     }
   ],
   "schedule": [
@@ -136,5 +146,5 @@
       "strict": false
     }
   ],
-  "updatedAt": "2026-09-15"
+  "updatedAt": "2026-09-22"
 }
