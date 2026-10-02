@@ -111,6 +111,16 @@
       "fileSize": "109 KB",
       "releaseAt": "2026-09-22T00:00:00+05:30",
       "visibility": "public"
+    },
+    {
+      "number": 7,
+      "title": "Multicycle Controller Design",
+      "summary": "A 10-state finite-state-machine controller for the MIPS multicycle datapath, derived from its PLA implementation (6 opcode bits + 4 state bits in, 16 control outputs + 4 next-state bits out), tested against a load-word (lw) instruction.",
+      "sections": ["P4", "P7"],
+      "file": "lab-07-multicycle-controller.pdf",
+      "fileSize": "694 KB",
+      "releaseAt": "2026-10-02T00:00:00+05:30",
+      "visibility": "public"
     }
   ],
   "schedule": [
@@ -146,5 +156,5 @@
       "strict": false
     }
   ],
-  "updatedAt": "2026-09-22"
+  "updatedAt": "2026-10-02"
 }
